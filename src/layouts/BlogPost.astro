@@ -53,7 +53,7 @@ const {
 } = Astro.props;
 
 const githubUrl = id
-	? `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${PROJECT_ROOT}/src/content/blog/${id}`
+	? `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${PROJECT_ROOT}/${id}`
 	: null;
 
 // Prepare folder items if this is a folder note
