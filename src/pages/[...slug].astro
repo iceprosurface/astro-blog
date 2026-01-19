@@ -130,6 +130,40 @@ const getReadingTime = (text: string) => {
 };
 const readingTime = getReadingTime(post.body || "");
 
+// 生成文章摘要（如果没有 description）
+const generateDescription = (content: string, maxLength: number = 160): string => {
+	// 移除 markdown 标记
+	let clean = content
+		.replace(/^---[\s\S]*?---/g, "") // 移除 frontmatter
+		.replace(/#{1,6}\s/g, "") // 移除标题标记
+		.replace(/\[([^\]]+)\]\([^\)]+\)/g, "$1") // 移除 markdown 链接，保留文本
+		.replace(/!\[([^\]]*)\]\([^\)]+\)/g, "") // 移除图片标记
+		.replace(/\*\*([^*]+)\*\*/g, "$1") // 移除粗体标记
+		.replace(/\*([^*]+)\*/g, "$1") // 移除斜体标记
+		.replace(/`([^`]+)`/g, "$1") // 移除代码标记
+		.replace(/```[\s\S]*?```/g, "") // 移除代码块
+		.replace(/\n+/g, " ") // 将换行符替换为空格
+		.trim();
+
+	// 如果是英文，按单词截取；如果是中文，按字符截取
+	if (/[\u4e00-\u9fa5]/.test(clean)) {
+		// 中文，按字符截取
+		return clean.slice(0, maxLength);
+	} else {
+		// 英文，按单词截取
+		const words = clean.split(/\s+/);
+		let result = "";
+		for (const word of words) {
+			if (result.length + word.length + 1 > maxLength) break;
+			result += (result ? " " : "") + word;
+		}
+		return result || clean.slice(0, maxLength);
+	}
+};
+
+const autoDescription = generateDescription(post.body || "");
+const finalDescription = post.data.description || autoDescription;
+
 // 获取 mapper 和路径信息
 const mapper = await PathMapper.getInstance({ contentDir: "src/content/blog" });
 const originalRelativePath =
@@ -177,6 +211,7 @@ if (currentMeta && currentMeta.forwardLinks) {
 <BlogPost
 	{...post.data}
 	id={post.id}
+	description={finalDescription}
 	readingTime={readingTime}
 	headings={headings}
 	backlinks={backlinks}

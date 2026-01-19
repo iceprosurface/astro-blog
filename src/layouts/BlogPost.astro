@@ -222,7 +222,7 @@ if (folderChildren) {
 
 <BaseLayout
 	title={title || ""}
-	description={description || ""}
+	description={description}
 	headings={headings}
 	hasMath={hasMath}
 	permalink={permalink}
@@ -237,17 +237,6 @@ if (folderChildren) {
 			/>
 			<div class="title">
 				<h1>{title}</h1>
-				{
-					tags && tags.length > 0 && (
-						<div class="tags-container">
-							{tags.map((tag) => (
-								<a href={`/tags/${tag}/`} class="tag">
-									{tag}
-								</a>
-							))}
-						</div>
-					)
-				}
 				<div class="meta-container">
 					<p show-comma="true" class="content-meta">
 						<span>{date && <FormattedDate date={date} />}</span>
@@ -286,6 +275,17 @@ if (folderChildren) {
 					</div>
 				</div>
 			</div>
+			{
+				tags && tags.length > 0 && (
+					<div class="tags-container">
+						{tags.map((tag) => (
+							<a href={`/tags/${tag}/`} class="tag">
+								{tag}
+							</a>
+						))}
+					</div>
+				)
+			}
 			{
 				originLink && (
 					<ReprintNote
