@@ -33,7 +33,7 @@ jobs:
             -o StrictHostKeyChecking=no \
             ${{ secrets.SSH_USER }}@${{ secrets.SSH_HOST }} << 'ENDSSH'
 
-            cd /opt/services/astro-blog
+            cd /opt/services/iceprosurface.com
 
             # 拉取最新镜像并重启
             docker compose pull
