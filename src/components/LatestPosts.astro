@@ -1,10 +1,17 @@
 ---
-import { getCollection } from 'astro:content';
-import FormattedDate from './FormattedDate.astro';
+import { getCollection } from "astro:content";
+import FormattedDate from "./FormattedDate.astro";
 
-const allPosts = await getCollection('blog');
+const allPosts = await getCollection("blog");
 const validPosts = allPosts
-  .filter(post => post.data.title && post.data.date && post.data.permalink && !post.data.draft && post.id !== 'index')
+  .filter(
+    (post) =>
+      post.data.title &&
+      post.data.date &&
+      post.data.permalink &&
+      !post.data.draft &&
+      post.id !== "index",
+  )
   .sort((a, b) => b.data.date!.getTime() - a.data.date!.getTime())
   .slice(0, 5); // Show top 5 latest posts
 ---
@@ -12,16 +19,18 @@ const validPosts = allPosts
 <div class="latest-posts">
   <h2 class="section-title">最新文章</h2>
   <ul class="posts-list">
-    {validPosts.map((post) => (
-      <li class="post-item">
-        <a href={post.data.permalink} class="post-link">
-          <span class="post-title">{post.data.title}</span>
-        </a>
-        <div class="post-meta">
-          {post.data.date && <FormattedDate date={post.data.date} />}
-        </div>
-      </li>
-    ))}
+    {
+      validPosts.map((post) => (
+        <li class="post-item">
+          <a href={post.data.permalink} class="post-link">
+            <span class="post-title">{post.data.title}</span>
+          </a>
+          <div class="post-meta">
+            {post.data.date && <FormattedDate date={post.data.date} />}
+          </div>
+        </li>
+      ))
+    }
   </ul>
   <div class="view-more">
     <a href="/blog">查看更多的笔记 →</a>
@@ -33,7 +42,7 @@ const validPosts = allPosts
     background-color: var(--light);
     border-radius: 8px;
   }
-  
+
   .section-title {
     font-size: 1.2rem;
     font-weight: bold;
@@ -60,7 +69,7 @@ const validPosts = allPosts
 
   .post-link {
     display: block;
-    color: var(--dark);
+    color: var(--secondary);
     text-decoration: none;
     font-weight: 500;
     line-height: 1.4;
@@ -68,7 +77,9 @@ const validPosts = allPosts
   }
 
   .post-link:hover {
-    color: var(--secondary);
+    color: var(--secondary-light);
+    opacity: 0.7;
+    transition: opacity 0.2s ease-in-out;
   }
 
   .post-meta {
@@ -87,7 +98,7 @@ const validPosts = allPosts
     font-weight: bold;
     color: var(--secondary);
   }
-  
+
   .view-more a:hover {
     text-decoration: underline;
   }

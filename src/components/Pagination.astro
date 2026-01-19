@@ -165,7 +165,7 @@ const paginationRange = getPaginationGroup();
     .pagination-wrapper {
         display: flex;
         align-items: center;
-        justify-content: center; /* Center content when wrapped */
+        justify-content: left; /* Center content when wrapped */
         gap: 1rem;
         margin: 2rem 0;
         font-family: var(--font-body, system-ui, sans-serif);
@@ -217,7 +217,7 @@ const paginationRange = getPaginationGroup();
 
     .pagination-btn:hover:not(.disabled),
     .pagination-number:hover:not(.active) {
-        color: var(--primary, #0070f3);
+        color: var(--secondary, #0070f3);
         background: transparent;
         border-color: transparent;
     }
@@ -230,7 +230,7 @@ const paginationRange = getPaginationGroup();
 
     .pagination-number.active {
         background: transparent;
-        color: var(--primary, #0070f3);
+        color: var(--secondary, #0070f3);
         border-color: transparent;
         font-weight: 700;
         box-shadow: none;
@@ -266,7 +266,7 @@ const paginationRange = getPaginationGroup();
 
     .jump-input:focus {
         outline: none;
-        border-color: var(--primary, #0070f3);
+        border-color: var(--secondary, #0070f3);
     }
 
     .jump-btn {
@@ -282,8 +282,8 @@ const paginationRange = getPaginationGroup();
     }
 
     .jump-btn:hover {
-        border-color: var(--primary, #0070f3);
-        color: var(--primary, #0070f3);
+        border-color: var(--secondary, #0070f3);
+        color: var(--secondary, #0070f3);
         background: transparent;
     }
 
@@ -306,12 +306,12 @@ const paginationRange = getPaginationGroup();
     :global(.dark) .jump-btn:hover {
         border-color: transparent;
         background: transparent;
-        color: var(--primary, #0070f3);
+        color: var(--secondary, #0070f3);
     }
 
     :global(.dark) .pagination-number.active {
         background: transparent;
         border-color: transparent;
-        color: var(--primary, #0070f3);
+        color: var(--secondary, #0070f3);
     }
 </style>
