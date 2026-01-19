@@ -1,0 +1,266 @@
+---
+import { type CollectionEntry, getCollection, render } from "astro:content";
+import BlogPost from "../layouts/BlogPost.astro";
+import { getEntry } from "astro:content";
+import { PathMapper } from "../utils/path-mapper/path-mapper.js";
+import { resolveInternalLinks } from "../utils/resolve-internal-links";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
+import path from "path";
+
+type Props = CollectionEntry<"blog"> & {
+	/** Optional redirect URL for file path routes */
+	redirectTo?: string;
+};
+
+const post = Astro.props as Props;
+
+// If this is a file path route, redirect to permalink
+if (post.redirectTo) {
+	return new Response(null, {
+		status: 301,
+		headers: {
+			Location: post.redirectTo,
+		},
+	});
+}
+
+export async function getStaticPaths() {
+	const posts = await getCollection("blog");
+
+	// Helper to create routes for permalinks and file paths
+	const createRoutes = (entry: CollectionEntry<"blog">) => {
+		const routes: {
+			params: { slug: string };
+			props: CollectionEntry<"blog">;
+			redirectTo?: string;
+		}[] = [];
+
+		// 1. Create permalink route
+		if (entry.data.permalink) {
+			routes.push({
+				params: {
+					slug: (entry.data.permalink as string).replace(
+						/^\/|\/$/g,
+						"",
+					),
+				},
+				props: entry,
+			});
+		}
+
+		// 2. Create file path routes (for compatibility with old links)
+		// Remove .md/.mdx extension from file ID
+		let filePath = entry.id;
+		filePath = filePath.replace(/\.mdx?$/, "");
+
+		// URL encode file path to handle special characters
+		const encodedFilePath = encodeURIComponent(filePath).replace(
+			/%2F/g,
+			"/",
+		);
+
+		routes.push({
+			params: {
+				slug: encodedFilePath,
+			},
+			props: entry,
+			redirectTo: entry.data.permalink as string,
+		});
+
+		return routes;
+	};
+
+	const allRoutes = posts
+		// 首先过滤掉所有 excalidraw 的文件
+		.filter((entry) => {
+			if (!entry) {
+				console.log("Skipping null/undefined post");
+				return false;
+			}
+			// Check if post is a valid object with an id
+			if (typeof entry !== "object" || !("id" in entry)) {
+				console.log(
+					"Skipping invalid post object (no id):",
+					JSON.stringify(entry).slice(0, 200),
+				);
+				return false;
+			}
+			if (!entry.id) {
+				console.log(
+					"Skipping post with empty id:",
+					JSON.stringify(entry).slice(0, 200),
+				);
+				return false;
+			}
+			return !entry.id.includes("excalidraw");
+		})
+		.filter((entry) => {
+			const data = entry.data;
+			if (!data) {
+				console.log(`Skipping post ${entry.id}: No data`);
+				return false;
+			}
+			if (!data.title || !data.permalink) {
+				console.log(
+					`Skipping post ${entry.id}: Missing title or permalink. Title: ${data.title}, Permalink: ${JSON.stringify(data.permalink)}`,
+				);
+				return false;
+			}
+			if (typeof data.permalink !== "string") {
+				console.log(
+					`Skipping post ${entry.id}: Permalink is not a string. Type: ${typeof data.permalink}, Value: ${JSON.stringify(data.permalink)}`,
+				);
+				return false;
+			}
+			return true;
+		})
+		.flatMap(createRoutes);
+
+	return allRoutes;
+}
+
+const renderResult = await render(post);
+const { headings } = renderResult;
+
+// 计算阅读时间
+const getReadingTime = (text: string) => {
+	const wordsPerMinute = 300;
+	const clean = text.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "");
+	return Math.max(1, Math.ceil(clean.length / wordsPerMinute));
+};
+const readingTime = getReadingTime(post.body || "");
+
+// 获取 mapper 和路径信息
+const mapper = await PathMapper.getInstance({ contentDir: "src/content/blog" });
+const originalRelativePath =
+	mapper.permalinkToRelativePath(post.data.permalink!) || post.id;
+
+// --- Backlinks and Forward Links Logic ---
+const currentPermalink = post.data.permalink || "";
+
+// 1. Backlinks: Find other posts that link to this one via metadata's backwardLinks
+const currentMeta = mapper.getFileMetadataByPermalink(currentPermalink);
+const backlinks: { text: string; url: string }[] = [];
+
+if (currentMeta && currentMeta.backwardLinks) {
+	for (const backlinkPermalink of currentMeta.backwardLinks) {
+		const backlinkMeta =
+			mapper.getFileMetadataByPermalink(backlinkPermalink);
+		if (backlinkMeta) {
+			backlinks.push({
+				text:
+					backlinkMeta.title ||
+					path.basename(backlinkMeta.relativePath),
+				url: backlinkMeta.permalink,
+			});
+		}
+	}
+}
+
+// 2. Forward Links: Get pre-calculated forward links from metadata
+const forwardLinks: { text: string; url: string }[] = [];
+
+if (currentMeta && currentMeta.forwardLinks) {
+	for (const linkPermalink of currentMeta.forwardLinks) {
+		const linkedMeta = mapper.getFileMetadataByPermalink(linkPermalink);
+		if (linkedMeta) {
+			forwardLinks.push({
+				text:
+					linkedMeta.title || path.basename(linkedMeta.relativePath),
+				url: linkedMeta.permalink,
+			});
+		}
+	}
+}
+---
+
+<BlogPost
+	{...post.data}
+	id={post.id}
+	readingTime={readingTime}
+	headings={headings}
+	backlinks={backlinks}
+	forwardLinks={forwardLinks}
+	relativePath={originalRelativePath}
+	permalink={post.data.permalink}
+>
+	<MarkdownRenderer content={post.body || ""} filePath={post.id} />
+</BlogPost>
+
+<style>
+	.folder-list-section {
+		margin-top: 4rem;
+		padding-top: 2rem;
+		border-top: 2px solid var(--lightgray);
+	}
+
+	.folder-list-section h2 {
+		font-size: 1.5rem;
+		margin-bottom: 1.5rem;
+		color: var(--darkgray);
+	}
+
+	/* File list view - like Finder/Windows Explorer */
+	.file-list-view {
+		width: 100%;
+	}
+
+	.file-list-item {
+		display: grid;
+		grid-template-columns: 40px 1fr 180px;
+		align-items: center;
+		padding: 12px 16px;
+		border-bottom: 1px solid var(--lightgray);
+		transition: background-color 0.2s ease;
+		gap: 12px;
+	}
+
+	.file-list-item:hover {
+		background-color: var(--highlight);
+	}
+
+	.file-list-item.file-item a,
+	.file-list-item.folder-item a {
+		text-decoration: none;
+		color: var(--dark);
+		transition: color 0.2s ease;
+	}
+
+	.file-list-item.file-item a:hover,
+	.file-list-item.folder-item a:hover {
+		color: var(--secondary);
+		text-decoration: underline;
+	}
+
+	.item-icon {
+		font-size: 20px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.item-name {
+		font-size: 14px;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.item-date {
+		font-size: 12px;
+		color: var(--gray);
+		text-align: right;
+	}
+
+	/* Responsive adjustments */
+	@media (max-width: 600px) {
+		.file-list-item {
+			grid-template-columns: 40px 1fr;
+			gap: 8px;
+		}
+
+		.item-date {
+			display: none;
+		}
+	}
+</style>

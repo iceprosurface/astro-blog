@@ -1,0 +1,317 @@
+---
+import {
+    ChevronLeft,
+    ChevronRight,
+    ChevronsLeft,
+    ChevronsRight,
+} from "@lucide/astro";
+
+interface Props {
+    length: number;
+    current: number;
+    currentPage: number;
+    firstUrl: string;
+    prevUrl?: string;
+    nextUrl?: string;
+    lastUrl: string; // Note: parent might not pass this, but we can compute or ignore if not passed strictly
+}
+
+const { length, current, prevUrl, nextUrl, firstUrl } = Astro.props;
+
+// Pagination Logic
+const PAGINATION_RANGE = 3; // Number of pages to show around current page
+
+const getPaginationGroup = () => {
+    let start = Math.max(1, current - PAGINATION_RANGE);
+    let end = Math.min(length, current + PAGINATION_RANGE);
+
+    const list = [];
+
+    // Always show first page
+    if (start > 1) {
+        list.push(1);
+        if (start > 2) list.push("...");
+    }
+
+    // Middle pages
+    for (let i = start; i <= end; i++) {
+        list.push(i);
+    }
+
+    // Always show last page
+    if (end < length) {
+        if (end < length - 1) list.push("...");
+        list.push(length);
+    }
+
+    return list;
+};
+
+const paginationRange = getPaginationGroup();
+---
+
+<nav class="pagination-wrapper" aria-label="Pagination">
+    <div class="pagination-controls">
+        <!-- First Page -->
+        <a
+            href={firstUrl}
+            class:list={["pagination-btn", { disabled: current === 1 }]}
+            aria-label="First page"
+        >
+            <ChevronsLeft size={18} />
+        </a>
+
+        <!-- Previous -->
+        <a
+            href={prevUrl || "#"}
+            class:list={["pagination-btn", { disabled: !prevUrl }]}
+            aria-label="Previous page"
+        >
+            <ChevronLeft size={18} />
+        </a>
+
+        <!-- Numbers -->
+        <div class="pagination-numbers">
+            {
+                paginationRange.map((page) => {
+                    if (page === "...") {
+                        return <span class="pagination-ellipsis">...</span>;
+                    }
+
+                    const url =
+                        page === 1
+                            ? firstUrl
+                            : `${firstUrl.replace(/\/$/, "")}/${page}`;
+
+                    return (
+                        <a
+                            href={url}
+                            class:list={[
+                                "pagination-number",
+                                { active: page === current },
+                            ]}
+                        >
+                            {page}
+                        </a>
+                    );
+                })
+            }
+        </div>
+
+        <!-- Next -->
+        <a
+            href={nextUrl || "#"}
+            class:list={["pagination-btn", { disabled: !nextUrl }]}
+            aria-label="Next page"
+        >
+            <ChevronRight size={18} />
+        </a>
+
+        <!-- Last Page -->
+        <a
+            href={length === 1
+                ? firstUrl
+                : `${firstUrl.replace(/\/$/, "")}/${length}`}
+            class:list={["pagination-btn", { disabled: current === length }]}
+            aria-label="Last page"
+        >
+            <ChevronsRight size={18} />
+        </a>
+    </div>
+
+    <!-- Jump to Page -->
+    <div class="pagination-jump">
+        <span>Go to</span>
+        <input
+            type="number"
+            min="1"
+            max={length}
+            value={current}
+            class="jump-input"
+            id="jump-input"
+        />
+        <button class="jump-btn" id="jump-btn" data-base={firstUrl}>Go</button>
+    </div>
+</nav>
+
+<script>
+    const jumpBtn = document.getElementById("jump-btn");
+    const jumpInput = document.getElementById("jump-input") as HTMLInputElement;
+
+    if (jumpBtn && jumpInput) {
+        jumpBtn.addEventListener("click", () => {
+            const page = parseInt(jumpInput.value);
+            const base = jumpBtn.dataset.base?.replace(/\/$/, "") || "";
+
+            if (page && page > 0) {
+                if (page === 1) {
+                    window.location.href = base || "/";
+                } else {
+                    window.location.href = `${base}/${page}`;
+                }
+            }
+        });
+
+        // Allow Enter key
+        jumpInput.addEventListener("keypress", (e) => {
+            if (e.key === "Enter") {
+                jumpBtn.click();
+            }
+        });
+    }
+</script>
+
+<style>
+    .pagination-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center; /* Center content when wrapped */
+        gap: 1rem;
+        margin: 2rem 0;
+        font-family: var(--font-body, system-ui, sans-serif);
+        width: 100%;
+        max-width: 100vw;
+        flex-wrap: wrap; /* Allow wrapping */
+    }
+
+    .pagination-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: center;
+        max-width: 100%;
+        padding: 4px;
+    }
+
+    .pagination-controls::-webkit-scrollbar {
+        display: none;
+    }
+
+    .pagination-numbers {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        flex-wrap: wrap; /* Allow wrapping */
+        justify-content: center;
+    }
+
+    .pagination-btn,
+    .pagination-number {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 2rem; /* Compact size 32px */
+        height: 2rem;
+        padding: 0;
+        border-radius: 6px;
+        color: var(--gray-dark, #333);
+        background: transparent; /* Cleaner flat look by default */
+        border: 1px solid transparent;
+        text-decoration: none;
+        transition: all 0.2s ease;
+        font-size: 0.875rem; /* 14px */
+        font-weight: 500;
+        flex-shrink: 0;
+    }
+
+    .pagination-btn:hover:not(.disabled),
+    .pagination-number:hover:not(.active) {
+        color: var(--primary, #0070f3);
+        background: transparent;
+        border-color: transparent;
+    }
+
+    .pagination-btn.disabled {
+        opacity: 0.4;
+        cursor: not-allowed;
+        color: var(--gray-light, #999);
+    }
+
+    .pagination-number.active {
+        background: transparent;
+        color: var(--primary, #0070f3);
+        border-color: transparent;
+        font-weight: 700;
+        box-shadow: none;
+    }
+
+    .pagination-ellipsis {
+        padding: 0 0.15rem;
+        color: var(--gray-light, #888);
+        font-size: 0.875rem;
+    }
+
+    /* Jump Section */
+    .pagination-jump {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.875rem;
+        color: var(--gray, #666);
+    }
+
+    .jump-input {
+        width: 2.5rem;
+        height: 2rem;
+        padding: 0 0.25rem;
+        border: 1px solid var(--border-color, #e5e5e5);
+        border-radius: 6px;
+        text-align: center;
+        font-size: 0.875rem;
+        transition: border-color 0.2s;
+        background: transparent;
+        color: var(--gray-dark, #333);
+    }
+
+    .jump-input:focus {
+        outline: none;
+        border-color: var(--primary, #0070f3);
+    }
+
+    .jump-btn {
+        height: 2rem;
+        padding: 0 0.75rem;
+        background: transparent;
+        border: 1px solid var(--border-color, #e5e5e5);
+        border-radius: 6px;
+        color: var(--gray-dark, #333);
+        cursor: pointer;
+        font-size: 0.875rem;
+        transition: all 0.2s;
+    }
+
+    .jump-btn:hover {
+        border-color: var(--primary, #0070f3);
+        color: var(--primary, #0070f3);
+        background: transparent;
+    }
+
+    /* Dark mode adjustments */
+    :global(.dark) .pagination-btn:not(.active):not(:hover),
+    :global(.dark) .pagination-number:not(.active):not(:hover),
+    :global(.dark) .jump-input,
+    :global(.dark) .jump-btn:not(:hover) {
+        color: var(--text-dark, #ddd);
+        border-color: transparent; /* Default transparent in dark too */
+    }
+
+    :global(.dark) .jump-input,
+    :global(.dark) .jump-btn {
+        border-color: var(--border-dark, #444); /* Borders visible for inputs */
+    }
+
+    :global(.dark) .pagination-btn:hover:not(.disabled),
+    :global(.dark) .pagination-number:hover:not(.active),
+    :global(.dark) .jump-btn:hover {
+        border-color: transparent;
+        background: transparent;
+        color: var(--primary, #0070f3);
+    }
+
+    :global(.dark) .pagination-number.active {
+        background: transparent;
+        border-color: transparent;
+        color: var(--primary, #0070f3);
+    }
+</style>

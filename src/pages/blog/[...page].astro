@@ -1,0 +1,51 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostList from "../../components/PostList.astro";
+import Pagination from "../../components/Pagination.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
+import type { GetStaticPaths, Page } from "astro";
+import { type CollectionEntry, getCollection } from "astro:content";
+
+export const getStaticPaths = (async ({ paginate }) => {
+	const allPosts = await getCollection("blog");
+	const validPosts = allPosts
+		.filter(
+			(post) =>
+				post.data.title &&
+				post.data.date &&
+				post.data.permalink &&
+				!post.data.draft &&
+				post.id !== "index",
+		)
+		.sort((a, b) => b.data.date!.getTime() - a.data.date!.getTime());
+
+	return paginate(validPosts, { pageSize: 15 });
+}) satisfies GetStaticPaths;
+
+interface Props {
+	page: Page<CollectionEntry<"blog">>;
+}
+
+const { page } = Astro.props;
+---
+
+<BaseLayout title={`文章列表 - ${SITE_TITLE}`} description={SITE_DESCRIPTION}>
+	<section>
+		<h1 style="margin-bottom: 2rem;">所有文章</h1>
+		<PostList posts={page.data} />
+
+		<Pagination
+			current={page.currentPage}
+			currentPage={page.currentPage}
+			length={page.lastPage}
+			firstUrl="/blog"
+			prevUrl={page.url.prev}
+			nextUrl={page.url.next}
+			lastUrl={page.lastPage === 1 ? "/blog" : `/blog/${page.lastPage}`}
+		/>
+	</section>
+
+	<style>
+		/* Styles removed as they are now handled by Pagination component */
+	</style>
+</BaseLayout>

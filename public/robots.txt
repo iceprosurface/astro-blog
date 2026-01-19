@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+Disallow: /preview/
+Disallow: /tags/
+Disallow: /__search/
+Disallow: /api/
+
+Sitemap: https://iceprosurface.com/sitemap-index.xml

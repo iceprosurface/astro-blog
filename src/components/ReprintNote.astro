@@ -1,0 +1,102 @@
+---
+interface Props {
+    originLink: string;
+    originAuthor?: string | null;
+    originNote?: string | null;
+}
+
+const { originLink, originAuthor, originNote } = Astro.props;
+---
+
+<div class="reprint-note">
+    <div class="reprint-icon">
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="20"
+            height="20"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+        >
+            <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+            <polyline points="16 6 12 2 8 6"></polyline>
+            <line x1="12" y1="2" x2="12" y2="15"></line>
+        </svg>
+    </div>
+    <div class="reprint-content">
+        <p>
+            <b>注意：</b>本文转载自 <a
+                href={originLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                >{originAuthor ? `${originAuthor} 的文章` : "外部链接"}</a
+            >
+            {originNote && <span>（{originNote}）</span>}。
+        </p>
+        <p class="reprint-meta">
+            如果内容有误或侵权，请联系博主删除。阅读原文请点击：<a
+                href={originLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="origin-link">{originLink}</a
+            >
+        </p>
+    </div>
+</div>
+
+<style>
+    .reprint-note {
+        margin: 1.5rem 0 2rem;
+        padding: 1rem;
+        background-color: var(--warning-bg, #fff3cd);
+        border: 1px solid var(--warning-border, #ffeeba);
+        border-left: 4px solid var(--warning-text, #856404);
+        border-radius: 4px;
+        color: var(--warning-text, #856404);
+        display: flex;
+        gap: 0.75rem;
+        align-items: flex-start;
+        font-size: 0.95rem;
+    }
+
+    .reprint-icon {
+        flex-shrink: 0;
+        padding-top: 2px;
+    }
+
+    .reprint-content {
+        flex: 1;
+    }
+
+    .reprint-content p {
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    .reprint-content p + p {
+        margin-top: 0.5rem;
+    }
+
+    .reprint-meta {
+        font-size: 0.85rem;
+        opacity: 0.9;
+    }
+
+    .reprint-content a {
+        color: currentColor;
+        text-decoration: underline;
+        text-decoration-style: dotted;
+        font-weight: 500;
+    }
+
+    .reprint-content a:hover {
+        text-decoration-style: solid;
+    }
+
+    .origin-link {
+        word-break: break-all;
+    }
+</style>

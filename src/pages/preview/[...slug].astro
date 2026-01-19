@@ -1,0 +1,44 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import MarkdownRenderer from "../../components/MarkdownRenderer.astro";
+
+export async function getStaticPaths() {
+	const posts = await getCollection("blog", ({ data, id }) => {
+		if (id?.includes("excalidraw")) return false;
+		if (data?.draft) return false;
+		if (!data?.permalink) return false;
+		return true;
+	});
+
+	return posts.map((post) => ({
+		params: {
+			slug: String(post.data.permalink).replace(/^\/|\/$/g, ""),
+		},
+		props: post,
+	}));
+}
+
+type Props = CollectionEntry<"blog">;
+const post = Astro.props;
+
+// 检测用户的暗色模式偏好
+const isDark = Astro.url.searchParams.get('theme') === 'dark' ||
+	Astro.url.searchParams.get('theme') === 'light'
+		? Astro.url.searchParams.get('theme') === 'dark'
+		: false;
+---
+
+<!doctype html>
+<html lang="zh-CN" class={isDark ? 'dark' : ''}>
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width,initial-scale=1" />
+		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lxgw-wenkai-webfont/1.7.0/style.css" />
+		<link rel="stylesheet" href="/preview-content.css" />
+	</head>
+	<body>
+		<div data-search-preview>
+			<MarkdownRenderer content={post.body || ""} filePath={post.id} />
+		</div>
+	</body>
+</html>

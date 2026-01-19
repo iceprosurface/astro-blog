@@ -1,0 +1,112 @@
+---
+import { getCollection, render } from "astro:content";
+import BaseLayout from "../layouts/BaseLayout.astro";
+import MarkdownRenderer from "../components/MarkdownRenderer.astro";
+
+import { SITE_DESCRIPTION, SITE_TITLE } from "../consts";
+import FormattedDate from "../components/FormattedDate.astro";
+import Comments from "../components/Comments.astro";
+import type { CollectionEntry } from "astro:content";
+
+// Get all posts and find the index one
+const allPosts = await getCollection("blog");
+const indexPost = allPosts.find((p) => p.id === "index");
+
+if (!indexPost) {
+	throw new Error("Index post not found");
+}
+
+// Use render() to get headings
+const { headings } = await render(indexPost);
+
+// Function to calculate reading time
+const getReadingTime = (text: string) => {
+	const wordsPerMinute = 300;
+	const clean = text.replace(/[^a-zA-Z0-9\u4e00-\u9fa5]/g, "");
+	return Math.max(1, Math.ceil(clean.length / wordsPerMinute));
+};
+
+const readingTime = getReadingTime(indexPost.body || "");
+const permalink = indexPost.data.permalink || null;
+---
+
+<BaseLayout
+	title={SITE_TITLE}
+	description={SITE_DESCRIPTION}
+	headings={headings}
+	permalink={permalink}
+>
+	<div class="content-wrapper">
+		<section class="page-content">
+			<article class="prose">
+				<h1 class="hero-title">
+					{indexPost.data.title || SITE_TITLE}
+				</h1>
+				<p show-comma="true" class="content-meta">
+					<span>
+						{
+							indexPost.data.date && (
+								<FormattedDate date={indexPost.data.date} />
+							)
+						}
+					</span>
+					<span>{readingTime} 分钟阅读</span>
+					<span>阅读: <span id="twikoo_visitors">...</span></span>
+				</p>
+
+				<MarkdownRenderer
+					content={indexPost.body || ""}
+					filePath={indexPost.id}
+				/>
+
+				<Comments path="/" show={false} />
+			</article>
+		</section>
+	</div>
+
+	<style>
+		.content-wrapper {
+			display: flex;
+			gap: 2rem;
+			align-items: flex-start;
+		}
+
+		.page-content {
+			flex: 1;
+			min-width: 0;
+		}
+
+		.hero-title {
+			font-size: 2.5rem;
+			font-weight: bold;
+			margin-top: 0;
+			margin-bottom: 0.5em;
+			color: var(--dark);
+			line-height: 1.2;
+		}
+
+		.prose {
+			color: var(--darkgray);
+			line-height: 1.7;
+		}
+
+		/* 响应式：在小屏幕上垂直布局 */
+		@media (max-width: 900px) {
+			.content-wrapper {
+				flex-direction: column;
+			}
+		}
+	</style>
+
+	<script
+		is:inline
+		src="https://cdnjs.cloudflare.com/ajax/libs/twikoo/1.6.36/twikoo.min.js"
+	></script>
+	<script>
+		// Initialize dark mode if not already set by Header script (redundancy is fine here for robustness)
+		const isDarkMode = localStorage.getItem("darkMode") === "true";
+		if (isDarkMode) {
+			document.documentElement.classList.add("dark");
+		}
+	</script>
+</BaseLayout>

@@ -1,0 +1,226 @@
+---
+import { SITE_TITLE } from "../consts";
+---
+
+<header>
+	<nav>
+		<div class="header-left">
+			<h2>
+				<a href="/" class="header-link">首页</a>
+				<a href="/blog" class="header-link">目录</a>
+			</h2>
+		</div>
+		<style>
+			/* Local style overriding to ensure links look like nav items */
+			.header-left {
+				gap: 2em;
+			}
+			.header-link {
+				font-size: 1.1rem;
+				font-weight: 700;
+				color: var(--dark);
+				text-decoration: none;
+			}
+			.header-link:hover {
+				color: var(--secondary);
+			}
+		</style>
+		<div class="header-right">
+			<div class="search" id="search-btn">
+				<div id="search-icon">
+					<p>Search</p>
+					<div></div>
+					<svg
+						tabindex="0"
+						aria-labelledby="title desc"
+						role="img"
+						xmlns="http://www.w3.org/2000/svg"
+						viewBox="0 0 19.9 19.7"
+						width="18"
+						height="18"
+					>
+						<title id="title">Search</title>
+						<desc id="desc">Search</desc>
+						<g
+							class="search-path"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<path
+								stroke-linecap="square"
+								d="M18.5 18.3l-5.4-5.4"></path>
+							<circle cx="8" cy="8" r="7"></circle>
+						</g>
+					</svg>
+				</div>
+			</div>
+			<button
+				id="dark-mode-toggle"
+				class="dark-mode-toggle"
+				aria-label="Toggle dark mode"
+			>
+				<svg
+					class="sun-icon"
+					xmlns="http://www.w3.org/2000/svg"
+					width="20"
+					height="20"
+					viewBox="0 0 24 24"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="2"
+					stroke-linecap="round"
+					stroke-linejoin="round"
+				>
+					<circle cx="12" cy="12" r="5"></circle>
+					<line x1="12" y1="1" x2="12" y2="3"></line>
+					<line x1="12" y1="21" x2="12" y2="23"></line>
+					<line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+					<line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+					<line x1="1" y1="12" x2="3" y2="12"></line>
+					<line x1="21" y1="12" x2="23" y2="12"></line>
+					<line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+					<line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+				</svg>
+				<svg
+					class="moon-icon"
+					xmlns="http://www.w3.org/2000/svg"
+					width="20"
+					height="20"
+					viewBox="0 0 100 100"
+					fill="currentColor"
+				>
+					<title>切换到亮色模式</title>
+					<path
+						d="M96.76,66.458c-0.853-0.852-2.15-1.064-3.23-0.534c-6.063,2.991-12.858,4.571-19.655,4.571  C62.022,70.495,50.88,65.88,42.5,57.5C29.043,44.043,25.658,23.536,34.076,6.47c0.532-1.08,0.318-2.379-0.534-3.23  c-0.851-0.852-2.15-1.064-3.23-0.534c-4.918,2.427-9.375,5.619-13.246,9.491c-9.447,9.447-14.65,22.008-14.65,35.369  c0,13.36,5.203,25.921,14.65,35.368s22.008,14.65,35.368,14.65c13.361,0,25.921-5.203,35.369-14.65  c3.872-3.871,7.064-8.328,9.491-13.246C97.826,68.608,97.611,67.309,96.76,66.458z"
+					></path>
+				</svg>
+			</button>
+		</div>
+	</nav>
+</header>
+
+<script>
+	const toggle = document.getElementById("dark-mode-toggle");
+	const html = document.documentElement;
+
+	// Note: Theme initialization is now handled in BaseHead.astro to prevent FOUC
+
+	toggle?.addEventListener("click", () => {
+		const isNowDark = html.classList.toggle("dark");
+		localStorage.setItem("darkMode", isNowDark ? "true" : "false");
+		html.setAttribute("saved-theme", isNowDark ? "dark" : "light");
+	});
+</script>
+
+<style>
+	header {
+		margin: 0;
+		padding: 0 1.5em;
+		background: var(--light);
+		transition: background-color 0.3s ease;
+	}
+	nav {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		max-width: 1280px;
+		margin: 0 auto;
+		height: 4rem;
+	}
+	.header-left {
+		display: flex;
+		align-items: center;
+	}
+	h2 {
+		margin: 0;
+		font-size: 1.25rem;
+	}
+	h2 a {
+		color: var(--dark);
+		text-decoration: none;
+		font-weight: 700;
+	}
+
+	.header-right {
+		display: flex;
+		align-items: center;
+		gap: 1.5rem;
+	}
+
+	.search {
+		min-width: 140px;
+		cursor: pointer;
+	}
+
+	#search-icon {
+		background-color: var(--lightgray);
+		border-radius: 6px;
+		height: 2.2rem;
+		display: flex;
+		align-items: center;
+		padding: 0 0.5rem 0 1rem;
+		transition: all 0.2s ease;
+	}
+
+	#search-icon:hover {
+		background-color: var(--highlight);
+	}
+
+	#search-icon p {
+		margin: 0;
+		font-size: 0.9rem;
+		color: var(--darkgray);
+		flex-grow: 1;
+	}
+
+	#search-icon svg {
+		color: var(--darkgray);
+	}
+
+	.dark-mode-toggle {
+		background: none;
+		border: none;
+		cursor: pointer;
+		color: var(--darkgray);
+		padding: 0.5rem;
+		border-radius: 6px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		transition: all 0.2s ease;
+	}
+
+	.dark-mode-toggle:hover {
+		background-color: var(--lightgray);
+		color: var(--secondary);
+	}
+
+	.sun-icon {
+		display: block;
+	}
+	.moon-icon {
+		display: none;
+	}
+
+	:global(.dark) .sun-icon {
+		display: none;
+	}
+	:global(.dark) .moon-icon {
+		display: block;
+	}
+
+	@media (max-width: 720px) {
+		.search p {
+			display: none;
+		}
+		.search {
+			min-width: auto;
+		}
+		#search-icon {
+			padding: 0 0.5rem;
+			width: 2.2rem;
+			justify-content: center;
+		}
+	}
+</style>

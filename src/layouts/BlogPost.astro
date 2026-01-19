@@ -1,0 +1,506 @@
+---
+import { Image } from "astro:assets";
+import type { CollectionEntry } from "astro:content";
+import BaseLayout from "./BaseLayout.astro";
+import FormattedDate from "../components/FormattedDate.astro";
+import Comments from "../components/Comments.astro";
+import Breadcrumb from "../components/Breadcrumb.astro";
+import LinkCard from "../components/LinkCard.astro";
+import License from "../components/License.astro";
+import ReprintNote from "../components/ReprintNote.astro";
+import { Github, Copy, Check } from "@lucide/astro";
+
+import { GITHUB_BRANCH, GITHUB_REPO, PROJECT_ROOT } from "../consts";
+import FolderFileList from "../components/FolderFileList.astro";
+
+type Props = CollectionEntry<"blog">["data"] & {
+	id?: string;
+	readingTime?: number;
+	permalink?: string | null;
+	headings?: { depth: number; slug: string; text: string }[];
+	backlinks?: {
+		text: string;
+		url: string;
+		date?: string;
+		description?: string;
+	}[];
+	forwardLinks?: { text: string; url: string }[];
+	hasMath?: boolean;
+	relativePath?: string;
+};
+
+const {
+	id,
+	title,
+	description,
+	date,
+	updatedDate,
+	readingTime,
+	comments,
+	permalink,
+	headings,
+	backlinks,
+	forwardLinks,
+	hasMath,
+	relativePath,
+	ccby,
+	"origin-link": originLink,
+	"origin-author": originAuthor,
+	"origin-license": originLicense,
+	"origin-note": originNote,
+	tags,
+	folderChildren, // From contentSchema
+} = Astro.props;
+
+const githubUrl = id
+	? `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${PROJECT_ROOT}/src/content/blog/${id}`
+	: null;
+
+// Prepare folder items if this is a folder note
+type UnifiedItem = {
+	type: "parent" | "folder" | "file";
+	name: string;
+	href: string;
+	isFolder: boolean;
+	date: string | null;
+};
+let folderItems: UnifiedItem[] = [];
+let hasFolderItems = false;
+
+if (folderChildren) {
+	// 1. Folders
+	if (folderChildren.folders) {
+		folderChildren.folders.forEach((folderPath) => {
+			// folderPath is relative path, e.g. "folder/subfolder"
+			// We need name and link.
+			// Assuming folderPath is what we want to link to, or we need to resolve it.
+			// Ideally content collection provides enough info.
+			// If folderPath is just string path, we can derive name.
+			// However, simple strings might not be enough for full metadata (title), but let's assume path for now.
+			// The schema says z.array(z.string()).
+
+			// We might need to import path to utilize basename.
+			// But we can't import 'path' in all environments easily? Astro supports it in frontmatter.
+
+			const name = folderPath.split("/").pop() || folderPath;
+			folderItems.push({
+				type: "folder",
+				name: name,
+				href: `/folder/${folderPath}`, // Assuming folder link convention
+				isFolder: true,
+				date: "-",
+			});
+		});
+	}
+
+	// 2. Files
+	if (folderChildren.files) {
+		folderChildren.files.forEach((file) => {
+			folderItems.push({
+				type: "file",
+				name: file.title,
+				href: file.permalink,
+				isFolder: false,
+				date: file.date
+					? new Date(file.date).toISOString().split("T")[0]
+					: "-",
+			});
+		});
+	}
+	hasFolderItems = true;
+} else if (
+	id &&
+	(id.endsWith("/index.md") ||
+		id.endsWith("/index.mdx") ||
+		id === "index.md" ||
+		id === "index.mdx")
+) {
+	// Fallback using PathMapper for index files without explicit folderChildren in frontmatter
+	const { PathMapper } = await import("../utils/path-mapper/path-mapper");
+	const mapper = await PathMapper.getInstance({
+		contentDir: "src/content/blog",
+	});
+
+	// Determine folder path from file id
+	let folderPath = "";
+	const normalizedId = PathMapper.normalizeRelativePath(id);
+	if (normalizedId.includes("/")) {
+		folderPath = normalizedId.substring(0, normalizedId.lastIndexOf("/"));
+	} else {
+		// e.g. "index.md", folderPath is empty root
+		folderPath = "";
+	}
+
+	console.log(`[BlogPost] Debugging Folder List for ID: ${id}`);
+	console.log(`[BlogPost] Normalized ID: ${normalizedId}`);
+	console.log(`[BlogPost] Derived Folder Path: ${folderPath}`);
+
+	const folderMeta = mapper.getFolderMetadataFromRelativePath(folderPath);
+	console.log(`[BlogPost] Folder Meta found:`, folderMeta ? "YES" : "NO");
+	if (folderMeta) {
+		console.log(
+			`[BlogPost] Subfolders: ${folderMeta.subfolders?.length}, Files: ${folderMeta.fileIds?.length}`,
+		);
+	}
+
+	if (folderMeta) {
+		// Add parent link if not root
+		if (folderPath) {
+			const parentPath = folderPath.includes("/")
+				? folderPath.substring(0, folderPath.lastIndexOf("/"))
+				: "";
+			let parentLink = "/folder";
+			if (parentPath) {
+				const parentMeta = mapper.getFolderMetadata(parentPath);
+				parentLink = parentMeta?.permalink || `/folder/${parentPath}`;
+			} else {
+				// Parent of top-level folder is root
+				parentLink = "/";
+			}
+
+			folderItems.push({
+				type: "parent",
+				name: "..",
+				href: parentLink,
+				isFolder: true,
+				date: null,
+			});
+		}
+
+		// Add subfolders
+		if (folderMeta.subfolders) {
+			folderMeta.subfolders.forEach((subPath) => {
+				const subMeta = mapper.getFolderMetadata(subPath);
+				const name = subPath.split("/").pop() || subPath;
+				folderItems.push({
+					type: "folder",
+					name: name,
+					href: subMeta?.permalink || `/folder/${subPath}`,
+					isFolder: true,
+					date: "-",
+				});
+			});
+		}
+
+		// Add files
+		if (folderMeta.fileIds) {
+			const fileIds = folderMeta.fileIds;
+			// We need to fetch file meta for sorting/details
+			const fileMetas = fileIds
+				.map((fid) => mapper.getFileMetadataByRelativePath(fid))
+				.filter(Boolean);
+
+			fileMetas.sort((a, b) =>
+				(a?.title || "").localeCompare(b?.title || ""),
+			);
+
+			fileMetas.forEach((meta) => {
+				if (meta) {
+					folderItems.push({
+						type: "file",
+						name:
+							meta.title ||
+							meta.relativePath
+								.split("/")
+								.pop()
+								?.replace(/\.mdx?$/, "") ||
+							"Untitled",
+						href: meta.permalink || "#",
+						isFolder: false,
+						date: "-", // PathMapper doesn't store date in FileMetadata currently, could be improved but "-" is fine fallback
+					});
+				}
+			});
+		}
+
+		if (folderItems.length > 0) {
+			hasFolderItems = true;
+		}
+	}
+}
+---
+
+<BaseLayout
+	title={title || ""}
+	description={description || ""}
+	headings={headings}
+	hasMath={hasMath}
+	permalink={permalink}
+>
+	<article>
+		<div class="prose" data-search-preview>
+			<!-- Breadcrumb navigation -->
+			<Breadcrumb
+				relativePath={relativePath}
+				title={title || ""}
+				permalink={permalink ?? ""}
+			/>
+			<div class="title">
+				<h1>{title}</h1>
+				{
+					tags && tags.length > 0 && (
+						<div class="tags-container">
+							{tags.map((tag) => (
+								<a href={`/tags/${tag}/`} class="tag">
+									{tag}
+								</a>
+							))}
+						</div>
+					)
+				}
+				<div class="meta-container">
+					<p show-comma="true" class="content-meta">
+						<span>{date && <FormattedDate date={date} />}</span>
+						{readingTime && <span>{readingTime} 分钟阅读</span>}
+						<span>阅读: <span id="twikoo_visitors">0</span></span>
+					</p>
+					<div class="meta-actions">
+						{
+							githubUrl && (
+								<a
+									href={githubUrl}
+									target="_blank"
+									title="在 GitHub 上查看"
+									class="action-btn"
+								>
+									<Github size={20} />
+								</a>
+							)
+						}
+						{
+							id && (
+								<button
+									class="action-btn copy-raw-btn"
+									data-id={id}
+									title="复制原始 Markdown"
+								>
+									<Copy class="copy-icon" size={20} />
+									<Check
+										class="check-icon"
+										size={20}
+										style={{ display: "none" }}
+									/>
+								</button>
+							)
+						}
+					</div>
+				</div>
+			</div>
+			{
+				originLink && (
+					<ReprintNote
+						originLink={originLink}
+						originAuthor={originAuthor}
+						originNote={originNote}
+					/>
+				)
+			}
+			<slot />
+
+			{
+				hasFolderItems && (
+					<div class="folder-list-container">
+						<FolderFileList items={folderItems} />
+					</div>
+				)
+			}
+
+			{
+				ccby && (
+					<License
+						title={title || ""}
+						permalink={permalink || Astro.url.href}
+					/>
+				)
+			}
+			<!-- 反向链接卡片 -->
+			<LinkCard backlinks={backlinks} />
+			{
+				comments !== false && (
+					<Comments
+						path={permalink || Astro.url.pathname}
+						show={comments}
+					/>
+				)
+			}
+		</div>
+	</article>
+
+	<style>
+		.prose {
+			color: var(--darkgray);
+			line-height: 1.7;
+		}
+		.title {
+			text-align: left;
+			margin-bottom: 0.85rem;
+		}
+		.title h1 {
+			margin-bottom: 0;
+		}
+		.tags-container {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.5rem;
+			margin: 0.5rem 0;
+		}
+		.meta-container {
+			display: flex;
+			justify-content: space-between;
+			align-items: center;
+			margin-top: 0.5rem;
+		}
+		.content-meta {
+			margin: 0;
+			display: flex;
+		}
+		.meta-actions {
+			display: flex;
+			gap: 0.5rem;
+			align-items: center;
+		}
+		.action-btn {
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			width: 32px;
+			height: 32px;
+			border-radius: 6px;
+			color: var(--gray);
+			background: transparent;
+			border: 1px solid transparent;
+			transition: all 0.2s;
+			cursor: pointer;
+			padding: 0;
+		}
+		.action-btn:hover {
+			background: var(--gray-light);
+			color: var(--black);
+		}
+		.copy-raw-btn {
+			border: none;
+		}
+	</style>
+
+	<script>
+		// Copy Raw Markdown Logic
+		const copyBtns = document.querySelectorAll(".copy-raw-btn");
+		copyBtns.forEach((btn) => {
+			btn.addEventListener("click", async () => {
+				const id = (btn as HTMLElement).dataset.id;
+				if (!id) return;
+
+				try {
+					const response = await fetch(`/api/raw/${id}`);
+					if (!response.ok)
+						throw new Error("Failed to fetch raw content");
+
+					const text = await response.text();
+					await navigator.clipboard.writeText(text);
+
+					// Show success state
+					const copyIcon = btn.querySelector(
+						".copy-icon",
+					) as HTMLElement;
+					const checkIcon = btn.querySelector(
+						".check-icon",
+					) as HTMLElement;
+
+					if (copyIcon && checkIcon) {
+						copyIcon.style.display = "none";
+						checkIcon.style.display = "block";
+
+						setTimeout(() => {
+							copyIcon.style.display = "block";
+							checkIcon.style.display = "none";
+						}, 2000);
+					}
+				} catch (err) {
+					console.error("Failed to copy raw content:", err);
+					alert("Failed to copy content");
+				}
+			});
+		});
+	</script>
+
+	<script type="module">
+		document.addEventListener("click", (e) => {
+			const button = e.target.closest(".clipboard-button");
+			if (!button) return;
+
+			const pre = button.parentElement;
+			const code = pre?.querySelector("code");
+			if (!code) return;
+
+			const text = code.innerText;
+			navigator.clipboard.writeText(text).then(() => {
+				button.classList.add("copied");
+				setTimeout(() => {
+					button.classList.remove("copied");
+				}, 2000);
+			});
+		});
+	</script>
+
+	<script type="module">
+		// 检查页面是否存在 mermaid 代码块
+		// 更加稳健的检测逻辑：检查 pre 和 code 及其 class
+		const allPres = document.querySelectorAll("pre");
+		const mermaidBlocks = Array.from(allPres).filter((pre) => {
+			const preClass = pre.getAttribute("class") || "";
+			const codeClass =
+				pre.querySelector("code")?.getAttribute("class") || "";
+			return (
+				preClass.includes("language-mermaid") ||
+				preClass.includes("mermaid") ||
+				codeClass.includes("language-mermaid") ||
+				codeClass.includes("mermaid")
+			);
+		});
+
+		if (mermaidBlocks.length > 0) {
+			try {
+				// 异步加载 mermaid
+				const { default: mermaid } =
+					await import("https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs");
+
+				// 简单的深色模式检测
+				const isDark =
+					document.documentElement.classList.contains("dark") ||
+					document.documentElement.getAttribute("data-theme") ===
+						"dark";
+
+				mermaid.initialize({
+					startOnLoad: false,
+					theme: isDark ? "dark" : "default",
+				});
+
+				// 处理所有 mermaid 代码块
+				for (const pre of mermaidBlocks) {
+					if (pre) {
+						const div = document.createElement("div");
+						div.classList.add("mermaid");
+						// 尝试获取 code 元素的内容，如果没有则获取 pre 的内容
+						const codeEl = pre.querySelector("code");
+						div.textContent = codeEl
+							? codeEl.innerText
+							: pre.innerText;
+
+						// 替换原有的 pre 元素
+						pre.replaceWith(div);
+					}
+				}
+
+				// 渲染
+				await mermaid.run({
+					querySelector: ".mermaid",
+				});
+			} catch (err) {
+				console.error(
+					"Failed to load or render mermaid diagrams:",
+					err,
+				);
+			}
+		}
+	</script>
+</BaseLayout>

@@ -1,0 +1,401 @@
+---
+import Graph from "./Graph.tsx";
+
+interface Props {
+  headings?: { depth: number; slug: string; text: string }[];
+  permalink?: string | null;
+}
+
+const { headings = [], permalink } = Astro.props;
+---
+
+<aside class="right-sidebar">
+  <div class="sidebar-content">
+    {
+      permalink !== undefined && permalink !== null && (
+        <div>
+          <p>关系图谱</p>
+          <section class="graph-container">
+            <Graph client:load currentPermalink={permalink} />
+          </section>
+        </div>
+      )
+    }
+    {
+      headings.length > 0 && (
+        <section class="toc">
+          <h2 class="section-title">目录</h2>
+          <div class="toc-wrapper">
+            <div class="toc-fade-top" />
+            <nav class="toc-nav">
+              <ul>
+                {headings.map((heading) => (
+                  <li class={`depth-${heading.depth}`}>
+                    <a href={`#${heading.slug}`}>{heading.text}</a>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+            <div class="toc-fade-bottom" />
+          </div>
+        </section>
+      )
+    }
+  </div>
+</aside>
+
+<style>
+  .right-sidebar {
+    width: 280px;
+    flex-shrink: 0;
+    background: var(--light);
+    border-left: 1px solid var(--lightgray);
+    position: sticky;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 94vh;
+    transition: background-color 0.3s ease;
+    z-index: 100;
+    overflow: visible;
+  }
+
+  .sidebar-content {
+    box-sizing: border-box;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    gap: 1.5rem;
+  }
+
+  .toc {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    flex: 1;
+    min-height: 0;
+  }
+
+  .section-title {
+    font-size: 0.85rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--darkgray);
+    margin-bottom: 1rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .graph-container {
+    width: 100%;
+    padding-bottom: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+  }
+
+  .right-sidebar nav ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .right-sidebar nav li {
+    margin-bottom: 0.5rem;
+    line-height: 1.4;
+  }
+
+  .right-sidebar nav a {
+    color: var(--darkgray);
+    text-decoration: none;
+    font-size: 0.9rem;
+    transition: color 0.2s ease;
+    display: block;
+    word-break: break-word;
+  }
+
+  .right-sidebar nav a:hover {
+    color: var(--secondary);
+  }
+
+  .depth-3 {
+    margin-left: 1rem;
+  }
+  .depth-4 {
+    margin-left: 2rem;
+  }
+  .depth-5 {
+    margin-left: 3rem;
+  }
+  .depth-6 {
+    margin-left: 4rem;
+  }
+
+  /* TOC 容器优化 */
+  .toc-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  /* TOC 导航区域 - 仅此区域可滚动 */
+  .toc-nav {
+    overflow-y: auto;
+    overflow-x: hidden;
+    scroll-behavior: smooth;
+
+    /* 美化滚动条 */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(143, 159, 169, 0.3) transparent;
+  }
+
+  /* Webkit 滚动条样式 */
+  .toc-nav::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  .toc-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .toc-nav::-webkit-scrollbar-thumb {
+    background-color: rgba(143, 159, 169, 0.3);
+    border-radius: 3px;
+    transition: background-color 0.2s;
+  }
+
+  .toc-nav::-webkit-scrollbar-thumb:hover {
+    background-color: rgba(143, 159, 169, 0.5);
+  }
+
+  /* 渐变遮罩 - 顶部 */
+  .toc-fade-top {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 6px;
+    height: 2rem;
+    background: linear-gradient(to bottom, var(--light), transparent);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+  }
+
+  /* 渐变遮罩 - 底部 */
+  .toc-fade-bottom {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 6px;
+    height: 3rem;
+    background: linear-gradient(to top, var(--light), transparent);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    z-index: 1;
+  }
+
+  /* 当 TOC 可滚动时显示渐变 */
+  .toc-wrapper.has-scroll .toc-fade-top {
+    opacity: 1;
+  }
+
+  .toc-wrapper.has-scroll .toc-fade-bottom {
+    opacity: 1;
+  }
+
+  /* 响应式：在小屏幕上隐藏 */
+  @media (max-width: 1200px) {
+    .right-sidebar {
+      display: none;
+    }
+  }
+
+  .toc nav li.active > a {
+    color: var(--secondary);
+    font-weight: 600;
+    position: relative;
+  }
+
+  /* 激活项左侧指示器 */
+  .toc nav li.active > a::before {
+    content: "";
+    position: absolute;
+    left: -0.75rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 3px;
+    height: 1rem;
+    background-color: var(--secondary);
+    border-radius: 2px;
+  }
+</style>
+
+<script>
+  function initTOC() {
+    const tocNav = document.querySelector(".toc-nav");
+    const tocWrapper = document.querySelector(".toc-wrapper");
+    const tocLinks = document.querySelectorAll(".toc nav a");
+
+    if (!tocLinks.length || !tocNav || !tocWrapper) return;
+
+    const headings = Array.from(
+      document.querySelectorAll(
+        ".prose h1, .prose h2, .prose h3, .prose h4, .prose h5, .prose h6",
+      ),
+    );
+
+    let ticking = false;
+    let userScrolling = false;
+    let userScrollTimeout = null;
+
+    // 检查 TOC 是否可滚动，显示/隐藏渐变遮罩
+    function updateScrollIndicators() {
+      const hasScroll = tocNav.scrollHeight > tocNav.clientHeight;
+      tocWrapper.classList.toggle("has-scroll", hasScroll);
+    }
+
+    // 滚动 TOC 使激活项居中
+    function scrollTocToCenter(activeLink) {
+      if (!activeLink || userScrolling) return;
+
+      const container = tocNav;
+      const linkRect = activeLink.getBoundingClientRect();
+      const containerRect = container.getBoundingClientRect();
+
+      // 计算需要滚动的距离，使激活项在容器中间
+      const offset =
+        linkRect.top -
+        containerRect.top -
+        containerRect.height / 2 +
+        linkRect.height / 2;
+
+      container.scrollTo({
+        top: container.scrollTop + offset,
+        behavior: "smooth",
+      });
+    }
+
+    // 更新 TOC 高亮
+    function updateToc() {
+      const scrollY = window.scrollY;
+      const innerHeight = window.innerHeight;
+      const bodyHeight = document.body.offsetHeight;
+
+      // 视口中心位置
+      const viewportCenter = scrollY + innerHeight / 2;
+
+      let activeHeading = null;
+      let minDistance = Infinity;
+
+      // 遍历所有标题，找到最接近视口中心的
+      for (const heading of headings) {
+        const rect = heading.getBoundingClientRect();
+        const headingCenter = scrollY + rect.top + rect.height / 2;
+        const distance = Math.abs(headingCenter - viewportCenter);
+
+        if (distance < minDistance) {
+          minDistance = distance;
+          activeHeading = heading;
+        }
+      }
+
+      // 如果标题都在视口下方，选择第一个标题
+      if (activeHeading && activeHeading.getBoundingClientRect().top > innerHeight) {
+        if (headings.length > 0) {
+          activeHeading = headings[0];
+        }
+      }
+
+      // 页面底部检测
+      if (innerHeight + scrollY >= bodyHeight - 50) {
+        if (headings.length > 0) {
+          activeHeading = headings[headings.length - 1];
+        }
+      }
+
+      let activeLink = null;
+      if (activeHeading) {
+        const id = activeHeading.getAttribute("id");
+        if (id) {
+          for (let i = 0; i < tocLinks.length; i++) {
+            const link = tocLinks[i];
+            const href = link.getAttribute("href");
+            if (href === "#" + id || href === "#" + encodeURIComponent(id)) {
+              activeLink = link;
+              break;
+            }
+          }
+        }
+      }
+
+      // 清除所有高亮
+      tocLinks.forEach(function (link) {
+        link.closest("li").classList.remove("active");
+      });
+
+      // 高亮当前项
+      if (activeLink) {
+        activeLink.closest("li").classList.add("active");
+        scrollTocToCenter(activeLink);
+      }
+    }
+
+    // 主滚动事件处理
+    function onScroll() {
+      if (!ticking) {
+        requestAnimationFrame(function () {
+          updateToc();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    }
+
+    // TOC 用户手动滚动检测
+    function onTocScroll() {
+      userScrolling = true;
+      clearTimeout(userScrollTimeout);
+
+      // 3秒后恢复自动跟随
+      userScrollTimeout = setTimeout(() => {
+        userScrolling = false;
+      }, 3000);
+    }
+
+    // 点击 TOC 链接时的处理
+    tocLinks.forEach((link) => {
+      link.addEventListener("click", (e) => {
+        // 允许默认行为（跳转到锚点）
+        // 短暂暂停自动跟随，避免冲突
+        userScrolling = true;
+        setTimeout(() => {
+          userScrolling = false;
+          updateToc();
+        }, 1000);
+      });
+    });
+
+    // 绑定事件
+    window.addEventListener("scroll", onScroll);
+    window.addEventListener("resize", () => {
+      updateScrollIndicators();
+      onScroll();
+    });
+    tocNav.addEventListener("scroll", onTocScroll);
+
+    // 初始化
+    updateScrollIndicators();
+    updateToc();
+  }
+
+  // 初始化
+  initTOC();
+
+  // 兼容 Astro View Transitions
+  document.addEventListener("astro:page-load", initTOC);
+</script>

@@ -1,0 +1,284 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import { PathMapper } from "../../utils/path-mapper/path-mapper";
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import path from "path";
+import { Folder, FileText, CornerLeftUp } from "@lucide/astro";
+import FolderFileList from "../../components/FolderFileList.astro";
+import MarkdownRenderer from "../../components/MarkdownRenderer.astro";
+
+interface FolderPageProps {
+	path: string;
+}
+
+export async function getStaticPaths() {
+	const mapper = await PathMapper.getInstance({
+		contentDir: "src/content/blog",
+	});
+	const allFolders = mapper.getAllFolders();
+
+	const paths = allFolders.map((folderMeta) => ({
+		params: {
+			path:
+				folderMeta.folderPath === ""
+					? undefined
+					: folderMeta.folderPath,
+		},
+		props: { path: folderMeta.folderPath },
+	}));
+
+	return paths;
+}
+
+const { path: folderPathParam } = Astro.props as FolderPageProps;
+const { path: paramsPath } = Astro.params;
+
+const mapper = await PathMapper.getInstance({ contentDir: "src/content/blog" });
+let folderPathDecoded = folderPathParam || paramsPath || "";
+
+// Fix: Handle /index suffix (e.g. /folder/foo/index -> /folder/foo)
+if (folderPathDecoded.endsWith("/index")) {
+	folderPathDecoded = folderPathDecoded.slice(0, -6);
+}
+
+const folderMeta = mapper.getFolderMetadata(folderPathDecoded);
+if (folderMeta) {
+}
+
+// Fix: Redirect to permalink if it exists (Canonical URL)
+if (folderMeta?.permalink) {
+	return Astro.redirect(folderMeta.permalink);
+}
+
+// Get posts in this folder from collection
+const posts = await getCollection("blog");
+const folderPosts = posts.filter((post) => {
+	// Re-calculate simpler: dirname of normalized path
+	const normalizedId = PathMapper.normalizeRelativePath(post.id);
+	let dirPath = "";
+	if (normalizedId.includes("/")) {
+		dirPath = normalizedId.substring(0, normalizedId.lastIndexOf("/"));
+	}
+
+	return dirPath === folderPathDecoded;
+});
+
+// Use folder metadata for subfolders and files
+const subfolders = folderMeta?.subfolders || [];
+
+// Files in this folder is already filtered
+const files = folderPosts;
+
+const folderTitle =
+	folderMeta?.title ||
+	(folderPathDecoded ? path.basename(folderPathDecoded) : "知识库");
+
+// Build breadcrumbs manually for folder pages
+const breadcrumbItems = [{ label: "Home", href: "/", isLast: false }];
+
+if (folderPathDecoded) {
+	const normalizedPath = folderPathDecoded.replace(/\\/g, "/");
+	const segments = normalizedPath.split("/").filter(Boolean);
+
+	let accumulatedPath = "";
+	for (let i = 0; i < segments.length; i++) {
+		const segment = segments[i];
+		const isLast = i === segments.length - 1;
+		accumulatedPath += (accumulatedPath ? "/" : "") + segment;
+
+		// Check if this folder has a permalink
+		const currentFolderMeta = mapper.getFolderMetadata(accumulatedPath);
+		const href = isLast
+			? ""
+			: currentFolderMeta?.permalink
+				? currentFolderMeta.permalink
+				: `/folder/${encodeURIComponent(accumulatedPath)}`;
+
+		breadcrumbItems.push({
+			label: currentFolderMeta?.title || segment,
+			href,
+			isLast,
+		});
+	}
+} else {
+	breadcrumbItems[breadcrumbItems.length - 1].isLast = true;
+}
+
+// Prepare Unified List Items
+type UnifiedItem = {
+	type: "parent" | "folder" | "file";
+	name: string;
+	href: string;
+	isFolder: boolean;
+	date: string | null;
+};
+const unifiedItems: UnifiedItem[] = [];
+
+// 1. Parent Directory Link
+if (folderPathDecoded) {
+	const normalizedPath = folderPathDecoded.replace(/\\/g, "/");
+	const parentPath = normalizedPath.substring(
+		0,
+		normalizedPath.lastIndexOf("/"),
+	);
+
+	let parentLink = "/folder"; // Default to root folder view
+	if (parentPath) {
+		// If parent is not root, finding its link
+		const parentMeta = mapper.getFolderMetadata(parentPath);
+		parentLink = parentMeta?.permalink || `/folder/${parentPath}`;
+	}
+
+	unifiedItems.push({
+		type: "parent",
+		name: "..",
+		href: parentLink,
+		isFolder: true,
+		date: null,
+	});
+}
+
+// 2. Subfolders
+if (subfolders && subfolders.length > 0) {
+	subfolders.forEach((subfolder) => {
+		const fullPath = subfolder;
+		const normalizedPath = fullPath.replace(/\\/g, "/");
+		// folderName is just the last segment
+		const folderName = path.basename(normalizedPath);
+
+		const subfolderMeta = mapper.getFolderMetadata(normalizedPath);
+		const folderLink =
+			subfolderMeta?.permalink || `/folder/${normalizedPath}`;
+
+		unifiedItems.push({
+			type: "folder",
+			name: folderName,
+			href: folderLink,
+			isFolder: true,
+			date: "-",
+		});
+	});
+}
+
+// 3. Files
+if (files && files.length > 0) {
+	// Sort files by date if available, or name?
+	// Usually files sorted by name or date. Let's keep original order (which might be arbitrary or date sorted by loader)
+	// or sort by title?
+	// Let's sort simply by title for consistency
+	const sortedFiles = [...files].sort((a, b) =>
+		(a.data.title || "").localeCompare(b.data.title || ""),
+	);
+
+	sortedFiles.forEach((file) => {
+		unifiedItems.push({
+			type: "file",
+			name: file.data.title || path.basename(file.id),
+			href: file.data.permalink || "#",
+			isFolder: false,
+			date: file.data.date
+				? new Date(file.data.date).toISOString().split("T")[0]
+				: "-",
+		});
+	});
+}
+---
+
+<BaseLayout
+	title={`${folderTitle} - 知识库`}
+	description={`浏览 ${folderTitle} 文件夹中的内容`}
+	showRightSidebar={false}
+>
+	<div class="folder-page">
+		<nav class="breadcrumb-container" aria-label="面包屑导航">
+			{
+				breadcrumbItems.map((item) => (
+					<div class="breadcrumb-element">
+						{item.isLast || !item.href ? (
+							<span>{item.label}</span>
+						) : (
+							<a href={item.href}>{item.label}</a>
+						)}
+						{!item.isLast && <p> ❯ </p>}
+					</div>
+				))
+			}
+		</nav>
+		<h1>{folderTitle}</h1>
+
+		{
+			folderMeta?.indexFileId &&
+				(() => {
+					const indexPost = posts.find(
+						(p) =>
+							PathMapper.normalizeRelativePath(p.id) ===
+							folderMeta.indexFileId,
+					);
+					return indexPost ? (
+						<div style="margin-bottom: 2rem;">
+							<MarkdownRenderer
+								content={indexPost.body || ""}
+								filePath={indexPost.id}
+							/>
+						</div>
+					) : null;
+				})()
+		}
+
+		<FolderFileList items={unifiedItems} />
+	</div>
+</BaseLayout>
+
+<style>
+	.folder-page {
+		max-width: 100%;
+		margin: 0;
+		padding: 0;
+		font-family: var(--bodyFont);
+	}
+
+	.breadcrumb-container {
+		margin: 0;
+		margin-top: 0.75rem;
+		padding: 0;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.breadcrumb-element {
+		p {
+			margin: 0;
+			margin-left: 0.5rem;
+			padding: 0;
+			line-height: normal;
+		}
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.breadcrumb-element a {
+		color: var(--secondary);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.breadcrumb-element a:hover {
+		color: var(--secondary-light);
+		text-decoration: underline;
+	}
+
+	.breadcrumb-element span {
+		color: var(--text-color, #666);
+		font-weight: 500;
+	}
+
+	.folder-page h1 {
+		font-size: 2rem;
+		margin-bottom: 1.5rem;
+		color: var(--dark);
+	}
+</style>

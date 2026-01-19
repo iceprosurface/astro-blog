@@ -1,0 +1,57 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import PostList from "../../components/PostList.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
+import { getCollection } from "astro:content";
+
+export async function getStaticPaths() {
+	const allPosts = await getCollection("blog");
+	const validPosts = allPosts
+		.filter(
+			(post) =>
+				post.data.title &&
+				post.data.date &&
+				post.data.permalink &&
+				!post.data.draft &&
+				post.id !== "index",
+		)
+		.sort((a, b) => b.data.date!.getTime() - a.data.date!.getTime());
+
+	const uniqueTags = [
+		...new Set(validPosts.flatMap((post) => post.data.tags || [])),
+	];
+
+	return uniqueTags.map((tag) => {
+		const filteredPosts = validPosts.filter((post) =>
+			post.data.tags?.includes(tag),
+		);
+		return {
+			params: { tag },
+			props: { posts: filteredPosts },
+		};
+	});
+}
+
+const { tag } = Astro.params;
+const { posts } = Astro.props;
+const permalink = "/tags/" + tag;
+---
+
+<BaseLayout
+	title={`标签: ${tag} - ${SITE_TITLE}`}
+	description={SITE_DESCRIPTION}
+	permalink={permalink}
+>
+	<section>
+		<h1 style="margin-bottom: 2rem;">标签: {tag}</h1>
+		<div style="margin-bottom: 2em;">
+			<a
+				href="/tags"
+				style="color: var(--secondary); text-decoration: underline;"
+				>← 返回所有标签</a
+			>
+		</div>
+		<PostList posts={posts} activeTag={tag} />
+		{posts.length === 0 && <p>该标签下暂无文章。</p>}
+	</section>
+</BaseLayout>

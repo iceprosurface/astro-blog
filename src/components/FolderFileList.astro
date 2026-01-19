@@ -1,0 +1,121 @@
+---
+import { Folder, FileText, CornerLeftUp } from "@lucide/astro";
+
+interface Props {
+    items: {
+        type: "parent" | "folder" | "file";
+        name: string;
+        href: string;
+        isFolder: boolean;
+        date: string | null;
+    }[];
+}
+
+const { items } = Astro.props;
+---
+
+<div class="file-list-view">
+    {items.length === 0 && <p class="empty-folder">此文件夹为空</p>}
+    {
+        items.map((item) => (
+            <div
+                class={`file-list-item ${
+                    item.type === "parent"
+                        ? "parent-item"
+                        : item.isFolder
+                          ? "folder-item"
+                          : "file-item"
+                }`}
+            >
+                <div class="item-icon">
+                    {item.type === "parent" && <CornerLeftUp size={20} />}
+                    {item.type === "folder" && <Folder size={20} />}
+                    {item.type === "file" && <FileText size={20} />}
+                </div>
+                <div class="item-name">
+                    <a href={item.href}>{item.name}</a>
+                </div>
+                <div class="item-date">{item.date}</div>
+            </div>
+        ))
+    }
+</div>
+
+<style>
+    /* File list view - like Finder/Windows Explorer */
+    .file-list-view {
+        width: 100%;
+        border-top: 1px solid var(--lightgray);
+        margin-top: 2rem;
+    }
+
+    .file-list-item {
+        display: grid;
+        grid-template-columns: 40px 1fr 180px;
+        align-items: center;
+        padding: 12px 16px;
+        border-bottom: 1px solid var(--lightgray);
+        transition: background-color 0.2s ease;
+        gap: 12px;
+    }
+
+    .file-list-item:hover {
+        background-color: var(--highlight);
+    }
+
+    .file-list-item a {
+        text-decoration: none;
+        color: var(--dark);
+        transition: color 0.2s ease;
+        display: block; /* Make link fill area mostly, but strictly parent div handles layout */
+    }
+
+    .file-list-item a:hover {
+        color: var(--secondary);
+        text-decoration: underline;
+    }
+
+    .item-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--secondary); /* Icon color */
+    }
+
+    .item-name {
+        font-size: 14px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .item-date {
+        font-size: 12px;
+        color: var(--gray);
+        text-align: right;
+        font-family: monospace;
+    }
+
+    .parent-item .item-name a {
+        font-weight: bold;
+    }
+
+    .empty-folder {
+        text-align: center;
+        padding: 2rem;
+        color: var(--gray);
+        border-bottom: 1px solid var(--lightgray);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .file-list-item {
+            grid-template-columns: 40px 1fr;
+            gap: 8px;
+        }
+
+        .item-date {
+            display: none;
+        }
+    }
+</style>

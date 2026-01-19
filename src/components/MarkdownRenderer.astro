@@ -1,0 +1,470 @@
+---
+import { unified } from "unified";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import rehypeStringify from "rehype-stringify";
+import rehypeShiki from "@shikijs/rehype";
+import remarkGfm from "remark-gfm";
+import remarkFootnotes from "../plugins/remark-footnotes.mjs";
+import remarkCallout from "../plugins/remark-callout.mjs";
+import remarkMath from "remark-math";
+import remarkMathFlag from "../plugins/remark-math-flag.mjs";
+import rehypeResolveInternalLinks from "../plugins/rehype-resolve-internal-links.mjs";
+import rehypeMarkExternalLinks from "../plugins/rehype-mark-external-links.mjs";
+import rehypeSlug from "../plugins/rehype-slug.mjs";
+import rehypeKatex from "rehype-katex";
+import { PathMapper } from "../utils/path-mapper/path-mapper.js";
+import path from "path";
+
+interface Props {
+  content: string; // 原始 markdown 文本
+  filePath: string; // 文件路径（相对于 content 目录，如 "blog/test.md"）
+}
+
+const { content, filePath } = Astro.props;
+
+// 构建 file path（用于 rehype 插件）
+const contentDir = "src/content/blog";
+const fullPath = path.join(process.cwd(), contentDir, filePath);
+
+// 确保 PathMapper 已构建
+const mapper = await PathMapper.getInstance({ contentDir });
+
+// 创建处理器
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkGfm) // Support GFM features like tables
+  .use(remarkFootnotes) // Support footnotes [^1]
+  .use(remarkMath)
+  .use(remarkMathFlag)
+  .use(remarkCallout)
+  .use(remarkRehype, { allowDangerousHtml: true })
+  .use(rehypeSlug) // Add stable IDs to headings
+  .use(rehypeResolveInternalLinks, { contentDir })
+  .use(rehypeMarkExternalLinks)
+  .use(rehypeKatex, { output: "html" })
+  .use(rehypeShiki, {
+    themes: {
+      light: "github-light",
+      dark: "github-dark",
+    },
+    langs: [
+      "javascript",
+      "typescript",
+      "python",
+      "java",
+      "rust",
+      "go",
+      "bash",
+      "markdown",
+      "html",
+      "css",
+      "json",
+      "yaml",
+      "xml",
+      "sql",
+      "php",
+      "c",
+      "cpp",
+      "csharp",
+      "ruby",
+      "swift",
+      "kotlin",
+      "dart",
+      "scala",
+      "haskell",
+      "lua",
+      "perl",
+      "r",
+      "matlab",
+      "nginx",
+      "apache",
+      "dockerfile",
+      "vim",
+      "shell",
+      "powershell",
+      "plaintext",
+    ],
+  })
+  .use(rehypeStringify, { allowDangerousHtml: true });
+
+// 处理 markdown
+const vfile = await processor.process({
+  value: content,
+  path: fullPath,
+});
+
+const htmlContent = String(vfile);
+---
+
+  <article set:html={htmlContent} />
+
+  <style>
+    /* 外部链接图标 */
+    .external {
+      position: relative;
+      padding-right: 1.2em;
+    }
+
+    .external::after {
+      content: "";
+      position: absolute;
+      right: 0;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 1ex;
+      height: 1ex;
+      background-image: url("data:image/svg+xml,%3Csvg height='1ex' viewBox='0 0 512 512'%3E%3Cpath d='M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: center;
+      background-size: contain;
+      opacity: 0.6;
+      transition: opacity 0.2s;
+    }
+
+    .external:hover::after {
+      opacity: 1;
+    }
+
+    /* Callout 样式 */
+    .callout {
+      margin: 1rem 0;
+      padding: 0;
+      border-radius: 0.5rem;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      overflow: hidden;
+    }
+
+  .callout-title {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    background: rgba(0, 0, 0, 0.03);
+  }
+
+  .callout-icon {
+    margin-right: 0.5rem;
+    font-size: 1.125rem;
+  }
+
+  .callout-content {
+    padding: 0.75rem 1rem;
+  }
+
+  /* Callout 颜色变体 */
+  .callout.info {
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  .callout.info .callout-title {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1e40af;
+  }
+  .callout.info .callout-icon::before {
+    content: "ℹ️";
+  }
+
+  .callout.tip {
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+  .callout.tip .callout-title {
+    background: rgba(34, 197, 94, 0.1);
+    color: #166534;
+  }
+  .callout.tip .callout-icon::before {
+    content: "💡";
+  }
+
+  .callout.warning {
+    border-color: rgba(245, 158, 11, 0.3);
+  }
+  .callout.warning .callout-title {
+    background: rgba(245, 158, 11, 0.1);
+    color: #92400e;
+  }
+  .callout.warning .callout-icon::before {
+    content: "⚠️";
+  }
+
+  .callout.danger {
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  .callout.danger .callout-title {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+  }
+  .callout.danger .callout-icon::before {
+    content: "🔥";
+  }
+
+  /* Callout 的其他颜色变体 */
+  .callout.note {
+    border-color: rgba(107, 114, 128, 0.3);
+  }
+  .callout.note .callout-title {
+    background: rgba(107, 114, 128, 0.1);
+    color: #374151;
+  }
+  .callout.note .callout-icon::before {
+    content: "📝";
+  }
+
+  .callout.success {
+    border-color: rgba(34, 197, 94, 0.3);
+  }
+  .callout.success .callout-title {
+    background: rgba(34, 197, 94, 0.1);
+    color: #166534;
+  }
+  .callout.success .callout-icon::before {
+    content: "✅";
+  }
+
+  .callout.error {
+    border-color: rgba(239, 68, 68, 0.3);
+  }
+  .callout.error .callout-title {
+    background: rgba(239, 68, 68, 0.1);
+    color: #991b1b;
+  }
+  .callout.error .callout-icon::before {
+    content: "❌";
+  }
+
+  .callout.question {
+    border-color: rgba(59, 130, 246, 0.3);
+  }
+  .callout.question .callout-title {
+    background: rgba(59, 130, 246, 0.1);
+    color: #1e40af;
+  }
+  .callout.question .callout-icon::before {
+    content: "❓";
+  }
+
+  /* 深色模式适配 */
+  @media (prefers-color-scheme: dark) {
+    .callout {
+      border-color: rgba(255, 255, 255, 0.1);
+    }
+
+    .callout-title {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  html.dark .callout {
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  html.dark .callout-title {
+    background: rgba(255, 255, 255, 0.05);
+  }
+
+  /* 代码块样式 - 确保与 Shiki 输出兼容 */
+  pre {
+    position: relative;
+    overflow-x: auto;
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: 0.5rem;
+  }
+
+  pre code {
+    display: block;
+    font-family:
+      ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  /* 表格样式 */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1.5rem 0;
+    overflow: hidden;
+  }
+
+  th,
+  td {
+    padding: 0.75rem 1rem;
+    text-align: left;
+    border-bottom: 1px solid var(--lightgray);
+  }
+
+  th {
+    font-weight: 600;
+    background-color: var(--highlight);
+    color: var(--dark);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover {
+    background-color: var(--highlight);
+  }
+
+  /* 脚注样式 */
+  .footnotes {
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--lightgray);
+    font-size: 0.85rem;
+  }
+
+  .footnotes h2 {
+    font-size: 1.25rem;
+    margin-bottom: 1rem;
+    color: var(--dark);
+  }
+
+  .footnotes ol {
+    padding-left: 1.5rem;
+    margin: 0;
+  }
+
+  .footnotes li {
+    margin-bottom: 0.5rem;
+    padding: 0.25rem 0;
+    line-height: 1.6;
+  }
+
+  .footnotes .footnote-backref {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    background-color: var(--highlight);
+    border-radius: 4px;
+    padding: 0 0.4rem;
+    margin-left: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--secondary);
+    transition: all 0.2s;
+  }
+
+  .footnotes .footnote-backref:hover {
+    background-color: var(--secondary);
+    color: var(--light);
+  }
+
+  sup a {
+    background-color: var(--highlight);
+    border-radius: 4px;
+    padding: 0 0.3rem;
+    font-size: 0.75rem;
+    text-decoration: none;
+    color: var(--secondary);
+    font-weight: 600;
+    transition: all 0.2s;
+  }
+
+  sup a:hover {
+    background-color: var(--secondary);
+    color: var(--light);
+  }
+</style>
+
+<script type="module">
+  // 代码复制功能 - 在客户端动态添加按钮
+  document.addEventListener("DOMContentLoaded", () => {
+    // 查找所有 pre 元素
+    const pres = document.querySelectorAll("pre");
+
+    pres.forEach((pre) => {
+      // 跳过已经有复制按钮的 pre
+      if (pre.querySelector(".shiki-copy-button")) {
+        return;
+      }
+
+      // 检查是否为代码块
+      const code = pre.querySelector("code");
+      if (!code) return;
+
+      // 创建复制按钮
+      const button = document.createElement("button");
+      button.className = "shiki-copy-button";
+      button.type = "button";
+      button.innerHTML = `
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+          <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+          <path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+        </svg>
+      `;
+
+      // 样式
+      Object.assign(button.style, {
+        position: "absolute",
+        top: "0.5rem",
+        right: "0.5rem",
+        padding: "0.25rem 0.5rem",
+        fontSize: "0.75rem",
+        background: "rgba(0, 0, 0, 0.1)",
+        border: "1px solid rgba(0, 0, 0, 0.2)",
+        borderRadius: "0.25rem",
+        cursor: "pointer",
+        transition: "background-color 0.2s",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        zIndex: "10",
+      });
+
+      // 深色模式适配
+      const isDark =
+        document.documentElement.classList.contains("dark") ||
+        document.documentElement.getAttribute("data-theme") === "dark" ||
+        window.matchMedia("(prefers-color-scheme: dark)").matches;
+
+      if (isDark) {
+        button.style.background = "rgba(255, 255, 255, 0.1)";
+        button.style.borderColor = "rgba(255, 255, 255, 0.2)";
+      }
+
+      // 悬停效果
+      button.addEventListener("mouseenter", () => {
+        button.style.background = isDark
+          ? "rgba(255, 255, 255, 0.2)"
+          : "rgba(0, 0, 0, 0.2)";
+      });
+      button.addEventListener("mouseleave", () => {
+        button.style.background = isDark
+          ? "rgba(255, 255, 255, 0.1)"
+          : "rgba(0, 0, 0, 0.1)";
+      });
+
+      // 复制功能
+      button.addEventListener("click", async () => {
+        const text = code.innerText;
+
+        try {
+          await navigator.clipboard.writeText(text);
+
+          // 显示复制成功状态
+          button.innerHTML = `
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="#22c55e">
+              <path fill-rule="evenodd" d="M13.78 4.22a.75.75 0 010 1.06l-7.25 7.25a.75.75 0 01-1.06 0L2.22 9.28a.75.75 0 011.06-1.06L6 10.94l6.72-6.72a.75.75 0 011.06 0z"/>
+            </svg>
+          `;
+
+          setTimeout(() => {
+            button.innerHTML = `
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                <path fill-rule="evenodd" d="M0 6.75C0 5.784.784 5 1.75 5h1.5a.75.75 0 010 1.5h-1.5a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-1.5a.75.75 0 011.5 0v1.5A1.75 1.75 0 019.25 16h-7.5A1.75 1.75 0 010 14.25v-7.5z"/>
+                <path fill-rule="evenodd" d="M5 1.75C5 .784 5.784 0 6.75 0h7.5C15.216 0 16 .784 16 1.75v7.5A1.75 1.75 0 0114.25 11h-7.5A1.75 1.75 0 015 9.25v-7.5zm1.75-.25a.25.25 0 00-.25.25v7.5c0 .138.112.25.25.25h7.5a.25.25 0 00.25-.25v-7.5a.25.25 0 00-.25-.25h-7.5z"/>
+              </svg>
+            `;
+          }, 2000);
+        } catch (err) {
+          console.error("Failed to copy code:", err);
+        }
+      });
+
+      pre.appendChild(button);
+    });
+  });
+</script>

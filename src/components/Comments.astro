@@ -1,0 +1,51 @@
+---
+interface Props {
+  path?: string;
+  show?: boolean;
+}
+
+const { path, show } = Astro.props;
+---
+
+{show && <div id="tcomment" />}
+<style>
+  #tcomment {
+    margin-top: 4rem;
+    min-height: 200px; /* 给他一个最小高度，避免布局偏移，也方便观察 */
+  }
+</style>
+
+<script is:inline define:vars={{ path }}>
+  // 页面空闲时加载 Twikoo 脚本
+  function loadTwikooScript() {
+    const init = () => {
+      window.twikoo?.init({
+        envId: "https://comment.iceprosurface.com",
+        el: "#tcomment",
+        path,
+      });
+    };
+
+    if (window.twikoo) {
+      init();
+      return;
+    }
+
+    const script = document.createElement("script");
+    script.src =
+      "https://cdnjs.cloudflare.com/ajax/libs/twikoo/1.6.36/twikoo.min.js";
+    script.async = true;
+    script.onload = init;
+    document.body.appendChild(script);
+  }
+
+  // 使用 requestIdleCallback 在空闲时加载，回退使用 setTimeout
+  const idleCallback =
+    window.requestIdleCallback ||
+    function (cb) {
+      setTimeout(cb, 1000);
+    };
+  idleCallback(() => {
+    loadTwikooScript();
+  });
+</script>

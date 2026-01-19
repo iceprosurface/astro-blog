@@ -1,0 +1,155 @@
+---
+import BaseHead from "../components/BaseHead.astro";
+import Footer from "../components/Footer.astro";
+import Header from "../components/Header.astro";
+import Sidebar from "../components/Sidebar.astro";
+import RightSidebar from "../components/RightSidebar.astro";
+import LinkPopover from "../components/LinkPopover.astro";
+import SearchModal from "../components/SearchModal.tsx";
+
+interface Props {
+	title: string;
+	description: string;
+	headings?: { depth: number; slug: string; text: string }[];
+	hasMath?: boolean;
+	permalink?: string | null;
+	showRightSidebar?: boolean;
+}
+
+const {
+	title,
+	description,
+	headings,
+	hasMath,
+	permalink,
+	showRightSidebar = true,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="zh-CN">
+	<head>
+		<BaseHead title={title} description={description} hasMath={hasMath} />
+	</head>
+	<body>
+		<div class="layout-wrapper">
+			<!-- 在宽屏幕上显示侧边栏 -->
+			<Sidebar />
+
+			<!-- 在小屏幕上显示顶部导航栏 -->
+			<div class="mobile-header">
+				<Header />
+			</div>
+
+			<!-- 主内容区域 -->
+			<div class="page-container">
+				<main class="main-content">
+					<slot />
+				</main>
+				<Footer />
+			</div>
+
+			<!-- 右侧边栏 -->
+			{
+				showRightSidebar && (
+					<RightSidebar headings={headings} permalink={permalink} />
+				)
+			}
+		</div>
+		<LinkPopover />
+		<SearchModal client:load />
+		<script>
+			// Initialize search functionality
+			const initSearch = async () => {
+				const {
+					initSearchKeyboardShortcuts,
+					initSearchButtonHandlers,
+				} = await import("../components/searchState.ts");
+				initSearchKeyboardShortcuts();
+				initSearchButtonHandlers();
+			};
+
+			initSearch();
+			document.addEventListener("astro:after-swap", initSearch);
+
+			let mermaidImport = null;
+			const renderMermaid = async () => {
+				if (!document.querySelector(".mermaid")) return;
+
+				mermaidImport ||=
+					await import("https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.7.0/mermaid.esm.min.mjs");
+				const mermaid = mermaidImport.default;
+				const darkMode =
+					document.documentElement.getAttribute("saved-theme") ===
+					"dark";
+				mermaid.initialize({
+					startOnLoad: false,
+					securityLevel: "loose",
+					theme: darkMode ? "dark" : "default",
+				});
+
+				await mermaid.run({
+					querySelector: ".mermaid",
+				});
+			};
+
+			renderMermaid();
+
+			document.addEventListener("astro:after-swap", renderMermaid);
+		</script>
+	</body>
+</html>
+
+<style is:global>
+	body {
+		min-height: 100vh;
+		background-color: var(--bg-body, #fff); /* Ensure background color */
+	}
+
+	.layout-wrapper {
+		display: flex;
+		max-width: 1920px;
+		margin: 0 auto;
+		width: 100%;
+		min-height: 100vh;
+		background-color: var(--light, #fff); /* Match sidebar bg or main bg */
+	}
+
+	.page-container {
+		flex: 1;
+		/* margin-left removed */
+		display: flex;
+		flex-direction: column;
+		min-height: 100vh;
+		min-width: 0; /* Prevent flex overflow */
+	}
+
+	.main-content {
+		flex: 1;
+		width: 100%;
+		max-width: 1280px;
+		margin: 0 auto;
+		padding: 2rem 1.5rem;
+		box-sizing: border-box;
+	}
+
+	/* 在大屏幕上隐藏移动端顶部导航栏 */
+	.mobile-header {
+		display: none;
+	}
+
+	/* 响应式：在小屏幕上切换到顶部导航栏 */
+	@media (max-width: 900px) {
+		.layout-wrapper {
+			flex-direction: column;
+		}
+
+		.page-container {
+			margin-left: 0;
+		}
+
+		.mobile-header {
+			display: block;
+		}
+	}
+</style>

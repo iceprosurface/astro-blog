@@ -1,0 +1,86 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { SITE_TITLE, SITE_DESCRIPTION } from "../../consts";
+import { getCollection } from "astro:content";
+
+const allPosts = await getCollection("blog");
+const validPosts = allPosts.filter(
+	(post) =>
+		post.data.title &&
+		post.data.date &&
+		post.data.permalink &&
+		!post.data.draft &&
+		post.id !== "index",
+);
+
+// Calculate tag counts
+const tagCountsMap = new Map<string, number>();
+validPosts.forEach((post) => {
+	const tags = post.data.tags || [];
+	tags.forEach((tag) => {
+		tagCountsMap.set(tag, (tagCountsMap.get(tag) || 0) + 1);
+	});
+});
+
+const tagCounts = Array.from(tagCountsMap.entries())
+	.map(([tag, count]) => ({ tag, count }))
+	.sort((a, b) => b.count - a.count);
+
+const maxCount = Math.max(...tagCounts.map((t) => t.count), 0);
+const permalink = "/tags";
+---
+
+<BaseLayout
+	title={`标签 - ${SITE_TITLE}`}
+	description={SITE_DESCRIPTION}
+	permalink={permalink}
+>
+	<section class="tag-cloud-section">
+		<h1 class="page-title">标签</h1>
+		<div class="tag-list">
+			{
+				tagCounts.map(({ tag, count }) => {
+					const ratio = maxCount > 0 ? count / maxCount : 0;
+					let fontSize = "1rem";
+					// Optional: dynamic sizing logic if desired, keeping it simple for now or copying from index
+					if (ratio > 0.8) fontSize = "1.3rem";
+					else if (ratio > 0.6) fontSize = "1.2rem";
+					else if (ratio > 0.4) fontSize = "1.1rem";
+
+					return (
+						<a
+							href={`/tags/${tag}`}
+							class="tag"
+							style={{ fontSize }}
+						>
+							{tag}
+							<span class="tag-count">({count})</span>
+						</a>
+					);
+				})
+			}
+		</div>
+	</section>
+
+	<style>
+		.tag-cloud-section {
+			padding: 1em 0;
+		}
+		.page-title {
+			font-size: 2rem;
+			font-weight: bold;
+			margin-bottom: 1.5em;
+			color: var(--dark);
+		}
+		.tag-list {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 1em;
+		}
+		.tag-count {
+			font-size: 0.8em;
+			opacity: 0.7;
+			margin-left: 0.3em;
+		}
+	</style>
+</BaseLayout>

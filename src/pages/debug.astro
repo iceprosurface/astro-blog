@@ -1,0 +1,54 @@
+---
+import { PathMapper } from "../utils/path-mapper/path-mapper";
+import { collections } from "../content.config";
+
+// Initialize PathMapper
+const pathMapper = await PathMapper.getInstance({
+    contentDir: "src/content/blog",
+});
+
+// Get data
+const allFiles = pathMapper.getAllFiles();
+const allFolders = pathMapper.getAllFolders();
+const fileTree = pathMapper.getFileTree();
+
+// Helper to serialize Map recursively
+const serializeMap = (map: Map<any, any>): any => {
+    const obj: any = {};
+    for (const [key, value] of map.entries()) {
+        if (
+            value &&
+            typeof value === "object" &&
+            "children" in value &&
+            value.children instanceof Map
+        ) {
+            obj[key] = {
+                ...value,
+                children: serializeMap(value.children),
+            };
+        } else {
+            obj[key] = value;
+        }
+    }
+    return obj;
+};
+
+const debugData = {
+    collections: collections,
+    pathMapper: {
+        stats: {
+            totalFiles: allFiles.length,
+            totalFolders: allFolders.length,
+        },
+        files: allFiles,
+        folders: allFolders,
+        fileTree: serializeMap(fileTree),
+    },
+};
+
+return new Response(JSON.stringify(debugData, null, 2), {
+    headers: {
+        "Content-Type": "application/json",
+    },
+});
+---

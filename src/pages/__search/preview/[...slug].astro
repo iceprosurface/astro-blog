@@ -1,0 +1,27 @@
+---
+import { getCollection, type CollectionEntry } from "astro:content";
+import MarkdownRenderer from "../../components/MarkdownRenderer.astro";
+
+export async function getStaticPaths() {
+	const posts = await getCollection("blog", ({ data, id }) => {
+		if (id?.includes("excalidraw")) return false;
+		if (data?.draft) return false;
+		if (!data?.permalink) return false;
+		return true;
+	});
+
+	return posts.map((post) => ({
+		params: {
+			slug: String(post.data.permalink).replace(/^\/|\/$/g, ""),
+		},
+		props: post,
+	}));
+}
+
+type Props = CollectionEntry<"blog">;
+const post = Astro.props;
+---
+
+<div data-search-preview>
+	<MarkdownRenderer content={post.body || ""} filePath={post.id} />
+</div>

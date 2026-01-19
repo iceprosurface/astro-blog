@@ -1,0 +1,94 @@
+---
+import { getCollection } from 'astro:content';
+import FormattedDate from './FormattedDate.astro';
+
+const allPosts = await getCollection('blog');
+const validPosts = allPosts
+  .filter(post => post.data.title && post.data.date && post.data.permalink && !post.data.draft && post.id !== 'index')
+  .sort((a, b) => b.data.date!.getTime() - a.data.date!.getTime())
+  .slice(0, 5); // Show top 5 latest posts
+---
+
+<div class="latest-posts">
+  <h2 class="section-title">最新文章</h2>
+  <ul class="posts-list">
+    {validPosts.map((post) => (
+      <li class="post-item">
+        <a href={post.data.permalink} class="post-link">
+          <span class="post-title">{post.data.title}</span>
+        </a>
+        <div class="post-meta">
+          {post.data.date && <FormattedDate date={post.data.date} />}
+        </div>
+      </li>
+    ))}
+  </ul>
+  <div class="view-more">
+    <a href="/blog">查看更多的笔记 →</a>
+  </div>
+</div>
+
+<style>
+  .latest-posts {
+    background-color: var(--light);
+    border-radius: 8px;
+  }
+  
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: bold;
+    margin-bottom: 1em;
+    color: var(--dark);
+    margin-top: 0;
+  }
+
+  .posts-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .post-item {
+    margin-bottom: 1em;
+    padding-bottom: 1em;
+    border-bottom: 1px solid var(--lightgray);
+  }
+
+  .post-item:last-child {
+    border-bottom: none;
+  }
+
+  .post-link {
+    display: block;
+    color: var(--dark);
+    text-decoration: none;
+    font-weight: 500;
+    line-height: 1.4;
+    transition: color 0.2s;
+  }
+
+  .post-link:hover {
+    color: var(--secondary);
+  }
+
+  .post-meta {
+    font-size: 0.85em;
+    color: var(--gray);
+    margin-top: 0.3em;
+  }
+
+  .view-more {
+    margin-top: 1.5em;
+    text-align: right;
+  }
+
+  .view-more a {
+    font-size: 0.9em;
+    font-weight: bold;
+    color: var(--secondary);
+  }
+  
+  .view-more a:hover {
+    text-decoration: underline;
+  }
+</style>

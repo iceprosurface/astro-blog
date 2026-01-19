@@ -1,0 +1,77 @@
+---
+import { PathMapper } from "../utils/path-mapper/path-mapper.js";
+
+interface Props {
+	relativePath?: string;
+	title?: string;
+	permalink?: string;
+}
+
+const { relativePath = "", title = "", permalink = "" } = Astro.props;
+
+const mapper = await PathMapper.getInstance({ contentDir: "src/content/blog" });
+
+// Build breadcrumbs from relativePath and title using new PathMapper API
+const breadcrumbs = mapper.getBreadcrumbs(relativePath);
+
+// 如果提供了 title prop，覆盖最后一个面包屑的 label（通常是当前页面）
+if (title && breadcrumbs.length > 0) {
+	breadcrumbs[breadcrumbs.length - 1].label = title;
+}
+---
+
+<nav class="breadcrumb-container" aria-label="面包屑导航">
+	{
+		breadcrumbs.map((item, index) => (
+			<div class="breadcrumb-element">
+				{item.isLast || !item.href ? (
+					<span>{item.label}</span>
+				) : (
+					<a href={item.href}>{item.label}</a>
+				)}
+				{!item.isLast && <p> ❯ </p>}
+			</div>
+		))
+	}
+</nav>
+
+<style>
+	.breadcrumb-container {
+		margin: 0;
+		margin-top: 0.75rem;
+		padding: 0;
+		display: flex;
+		flex-direction: row;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.breadcrumb-element {
+		p {
+			margin: 0;
+			margin-left: 0.5rem;
+			padding: 0;
+			line-height: normal;
+		}
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.breadcrumb-element a {
+		color: var(--secondary);
+		text-decoration: none;
+		transition: color 0.2s ease;
+	}
+
+	.breadcrumb-element a:hover {
+		color: var(--secondary-light);
+		text-decoration: underline;
+	}
+
+	.breadcrumb-element span {
+		color: var(--text-color, #666);
+		font-weight: 500;
+	}
+</style>

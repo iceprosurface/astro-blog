@@ -1,0 +1,279 @@
+<div id="link-popover" class="link-popover" style="display: none;">
+  <div class="link-popover-content">
+    <div id="link-popover-loading" class="loading-indicator">Loading...</div>
+    <div id="link-popover-body"></div>
+  </div>
+  <div id="link-popover-arrow" class="link-popover-arrow"></div>
+</div>
+
+<script>
+  // @ts-nocheck
+  import {
+    computePosition,
+    autoUpdate,
+    flip,
+    shift,
+    offset,
+    arrow,
+  } from "https://cdn.jsdelivr.net/npm/@floating-ui/dom@1.6.0/+esm";
+
+  const popover = document.getElementById("link-popover");
+  const popoverBody = document.getElementById("link-popover-body");
+  const popoverLoading = document.getElementById("link-popover-loading");
+  const popoverArrow = document.getElementById("link-popover-arrow");
+
+  let currentLink = null;
+  let hoverTimeout = null;
+  let cleanupPosition = null; // Store the cleanup function for autoUpdate
+
+  function updatePosition(link, popover) {
+    if (!link || !popover || !popoverArrow) return;
+
+    computePosition(link, popover, {
+      placement: "top",
+      strategy: "fixed",
+      middleware: [
+        offset(10),
+        flip(),
+        shift({ padding: 5 }),
+        arrow({ element: popoverArrow }),
+      ],
+    }).then(({ x, y, placement, middlewareData }) => {
+      Object.assign(popover.style, {
+        left: `${x}px`,
+        top: `${y}px`,
+      });
+
+      // Accessing the data
+      if (middlewareData.arrow) {
+        const { x: arrowX, y: arrowY } = middlewareData.arrow;
+
+        const staticSide = {
+          top: "bottom",
+          right: "left",
+          bottom: "top",
+          left: "right",
+        }[placement.split("-")[0]];
+
+        Object.assign(popoverArrow.style, {
+          left: arrowX != null ? `${arrowX}px` : "",
+          top: arrowY != null ? `${arrowY}px` : "",
+          right: "",
+          bottom: "",
+          [staticSide]: "-5px", // Slightly more overlap
+        });
+      }
+    });
+  }
+
+  function showPopover(link) {
+    if (!popover || !popoverLoading || !popoverBody) return;
+
+    const url = link.getAttribute("href");
+    if (!url) return;
+
+    currentLink = link;
+    popover.style.display = "block";
+    popoverLoading.style.display = "block";
+    popoverBody.style.display = "none";
+
+    // Clear previous content
+    popoverBody.innerHTML = "";
+
+    // Start auto-updating position specifically for this link
+    if (cleanupPosition) cleanupPosition();
+    cleanupPosition = autoUpdate(link, popover, () => {
+      updatePosition(link, popover);
+    });
+
+    // Determine theme (dark or light)
+    const isDark = document.documentElement.classList.contains("dark") ||
+                   document.documentElement.getAttribute("saved-theme") === "dark";
+    const themeQuery = isDark ? "?theme=dark" : "?theme=light";
+
+    // Fetch preview page
+    const previewUrl = `/preview${url}${themeQuery}`;
+
+    fetch(previewUrl)
+      .then((response) => {
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        return response.text();
+      })
+      .then((html) => {
+        if (currentLink !== link) return;
+
+        // Parse HTML and extract body content
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const bodyContent = doc.querySelector("body")?.innerHTML || html;
+
+        // Insert content directly
+        popoverBody.innerHTML = bodyContent;
+
+        // Handle anchor scrolling if present
+        if (url.includes("#")) {
+          const hash = url.split("#")[1];
+          const el = popoverBody.querySelector(`#${hash}`);
+          if (el) el.scrollIntoView();
+        }
+
+        popoverLoading.style.display = "none";
+        popoverBody.style.display = "block";
+      })
+      .catch((error) => {
+        console.error("Failed to load preview:", error);
+        popoverLoading.textContent = "Failed to load preview";
+        setTimeout(() => hidePopover(), 1500);
+      });
+  }
+
+  function hidePopover() {
+    currentLink = null;
+    if (popover) {
+      popover.style.display = "none";
+      popoverBody.innerHTML = "";
+    }
+    // proper cleanup of autoUpdate
+    if (cleanupPosition) {
+      cleanupPosition();
+      cleanupPosition = null;
+    }
+  }
+
+  function init() {
+    // Listen on the whole document to catch links everywhere (sidebars, main, etc)
+    document.addEventListener("mouseover", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const link = target.closest("a");
+      if (link) {
+        // Only show preview for links in prose content area (正文内部的链接)
+        if (!link.closest(".prose[data-search-preview]")) {
+          return;
+        }
+
+        // Internal link check: has 'internal' class OR starts with / (but not //)
+        const href = link.getAttribute("href");
+        const isInternal =
+          link.classList.contains("internal") ||
+          (href && href.startsWith("/") && !href.startsWith("//"));
+
+        if (!isInternal || href === "/" || href === window.location.pathname) {
+          return;
+        }
+
+        clearTimeout(hoverTimeout);
+        hoverTimeout = setTimeout(() => {
+          showPopover(link);
+        }, 500); // 500ms delay for a more intentional feel
+      }
+    });
+
+    document.addEventListener("mouseout", (e) => {
+      const target = e.target;
+      if (!(target instanceof HTMLElement)) return;
+
+      const link = target.closest("a");
+      if (link) {
+        clearTimeout(hoverTimeout);
+        hoverTimeout = setTimeout(() => {
+          // Only hide if not hovering over the popover itself
+          if (!popover.matches(":hover") && currentLink === link) {
+            hidePopover();
+          }
+        }, 300);
+      }
+    });
+
+    popover?.addEventListener("mouseleave", () => {
+      // Check if we are still hovering over the link that opened it
+      if (!currentLink?.matches(":hover")) {
+        hidePopover();
+      }
+    });
+  }
+
+  // Handle initialization
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", init);
+  } else {
+    init();
+  }
+
+  // For Astro View Transitions
+  document.addEventListener("astro:after-swap", init);
+</script>
+
+<style>
+  .link-popover {
+    position: fixed;
+    width: 500px;
+    height: 400px; /* Fixed height for iframe stability */
+    background: var(--light, #fff);
+    border: 1px solid var(--lightgray, #e5e5e5);
+    border-radius: 12px;
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+    z-index: 10000;
+    overflow: hidden;
+    pointer-events: auto;
+    /* font-size: 0.95rem; line-height: 1.6; */
+    color: var(--darkgray, #4e4e4e);
+    backdrop-filter: blur(8px);
+    transition: opacity 0.2s ease;
+  }
+
+  .link-popover-content {
+    /* Removed padding to let iframe fill */
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    /* overflow-y: hidden;  Iframe handles scroll */
+  }
+
+  /* Iframe Styles */
+  :global(.link-preview-iframe) {
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: transparent;
+    display: block;
+  }
+
+  :global(.dark) .link-popover {
+    background: rgba(30, 30, 32, 0.95);
+    border-color: #333;
+    color: #d4d4d4;
+    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.6);
+  }
+
+  .loading-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--gray, #999);
+    font-weight: 500;
+  }
+
+  #link-popover-body {
+    width: 100%;
+    height: 100%;
+    overflow-y: auto;
+    padding: 16px;
+  }
+
+  .link-popover-arrow {
+    position: absolute;
+    background: inherit;
+    width: 12px;
+    height: 12px;
+    transform: rotate(45deg);
+    border: 1px solid var(--lightgray, #e5e5e5);
+    z-index: -1;
+  }
+
+  :global(.dark) .link-popover-arrow {
+    border-color: #333;
+  }
+</style>
