@@ -90,7 +90,7 @@ body {
 	color: var(--darkgray);
 	font-size: 15px;
 	line-height: 1.6;
-	font-weight: 300;
+	font-weight: 400;
 	transition: background-color 0.3s ease, color 0.3s ease;
 }
 

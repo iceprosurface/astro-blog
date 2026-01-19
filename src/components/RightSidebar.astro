@@ -107,10 +107,11 @@ const { headings = [], permalink } = Astro.props;
   }
 
   .right-sidebar nav a {
-    color: var(--darkgray);
+    color: var(--secondary-light);
     text-decoration: none;
+    transition: opacity 0.2s ease;
+    opacity: 0.6;
     font-size: 0.9rem;
-    transition: color 0.2s ease;
     display: block;
     word-break: break-word;
   }
@@ -218,6 +219,7 @@ const { headings = [], permalink } = Astro.props;
   .toc nav li.active > a {
     color: var(--secondary);
     font-weight: 600;
+    opacity: 1;
     position: relative;
   }
 
@@ -305,7 +307,10 @@ const { headings = [], permalink } = Astro.props;
       }
 
       // 如果标题都在视口下方，选择第一个标题
-      if (activeHeading && activeHeading.getBoundingClientRect().top > innerHeight) {
+      if (
+        activeHeading &&
+        activeHeading.getBoundingClientRect().top > innerHeight
+      ) {
         if (headings.length > 0) {
           activeHeading = headings[0];
         }

@@ -148,8 +148,8 @@
 
       const link = target.closest("a");
       if (link) {
-        // Only show preview for links in prose content area (正文内部的链接)
-        if (!link.closest(".prose[data-search-preview]")) {
+        // Only show preview for links in markdown-content area (正文内部的链接)
+        if (!link.closest("article.markdown-content")) {
           return;
         }
 

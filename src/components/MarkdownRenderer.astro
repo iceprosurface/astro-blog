@@ -174,7 +174,7 @@ const vfile = await processor.process({
 const htmlContent = String(vfile);
 ---
 
-<article set:html={htmlContent} />
+<article class="markdown-content" set:html={htmlContent} />
 
 <style>
   /* Callout 样式 */
@@ -417,6 +417,11 @@ const htmlContent = String(vfile);
   sup a:hover {
     background-color: var(--secondary);
     color: var(--light);
+  }
+  .markdown-content {
+    h1 {
+      font-size: 1.8rem;
+    }
   }
 </style>
 
