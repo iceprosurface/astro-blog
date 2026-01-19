@@ -7,13 +7,18 @@ import react from '@astrojs/react';
 import { defineConfig } from 'astro/config';
 
 import remarkCallout from './src/plugins/remark-callout.mjs';
-
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import remarkMathFlag from './src/plugins/remark-math-flag.mjs';
-
+import rehypeMarkExternalLinks from './src/plugins/rehype-mark-external-links.mjs';
+import manualRedirects from './src/manual-redirects.json';
+import redirects from './src/redirects.json'
 // https://astro.build/config
 export default defineConfig({
+	redirects: {
+		...manualRedirects,
+		...redirects,
+	},
 	site: 'https://iceprosurface.com',
 	integrations: [mdx(), sitemap({
 		filter: (page) =>
@@ -43,6 +48,7 @@ export default defineConfig({
 		],
 		rehypePlugins: [
 			[rehypeKatex, { output: 'html' }],
+			rehypeMarkExternalLinks,
 		],
 		shikiConfig: {
 			themes: {

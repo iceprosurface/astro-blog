@@ -16,6 +16,11 @@ export default function rehypeMarkExternalLinks() {
             const isExternal = href.startsWith('http://') || href.startsWith('https://');
 
             if (isExternal) {
+                // Add target="_blank"
+                node.properties.target = '_blank';
+                // Add rel="noopener noreferrer" for security
+                node.properties.rel = 'noopener noreferrer';
+
                 // Add 'external' class
                 const className = node.properties.className;
                 if (Array.isArray(className)) {
@@ -28,7 +33,7 @@ export default function rehypeMarkExternalLinks() {
                         node.properties.className = className + ' external';
                     }
                 } else {
-                    node.properties.className = 'external';
+                    node.properties.className = ['external'];
                 }
             }
         });

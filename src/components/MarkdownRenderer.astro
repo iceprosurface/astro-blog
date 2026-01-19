@@ -13,6 +13,7 @@ import rehypeResolveInternalLinks from "../plugins/rehype-resolve-internal-links
 import rehypeMarkExternalLinks from "../plugins/rehype-mark-external-links.mjs";
 import rehypeSlug from "../plugins/rehype-slug.mjs";
 import rehypeKatex from "rehype-katex";
+import { visit } from "unist-util-visit";
 import { PathMapper } from "../utils/path-mapper/path-mapper.js";
 import path from "path";
 
@@ -30,6 +31,81 @@ const fullPath = path.join(process.cwd(), contentDir, filePath);
 // 确保 PathMapper 已构建
 const mapper = await PathMapper.getInstance({ contentDir });
 
+// 获取所有图片资源映射
+const images = import.meta.glob(
+  "/src/content/blog/**/*.{png,jpg,jpeg,gif,svg,webp}",
+  {
+    eager: true,
+    query: "?url",
+    import: "default",
+  },
+);
+
+/**
+ * Rehype 插件：解析相对路径图片
+ */
+function rehypeResolveRelativeAssets() {
+  return (tree: any) => {
+    visit(tree, "element", (node: any) => {
+      if (node.tagName === "img" && node.properties && node.properties.src) {
+        const src = node.properties.src as string;
+
+        // 判断是否为相对路径：不以 / 开头，且不是绝对 URI (http, data, etc.)
+        const isAbsolute = src.startsWith("/") || src.startsWith("\\");
+        const isUri = /^[a-z]+:/i.test(src);
+
+        if (!isAbsolute && !isUri) {
+          try {
+            // 解码 src (处理 URL 编码字符)
+            const decodedSrc = decodeURI(src);
+
+            // 计算图片的绝对路径
+            const imageAbsPath = path.resolve(
+              path.dirname(fullPath),
+              decodedSrc,
+            );
+
+            // 计算相对于项目根目录的路径（用于匹配 glob key）
+            let relPath = path.relative(process.cwd(), imageAbsPath);
+            // 统一分隔符为 /
+            relPath = relPath.split(path.sep).join("/");
+
+            // 构造 key (确保以 / 开头)
+            const key = "/" + relPath;
+
+            // 查找资源
+            const resolvedUrl = (images as Record<string, string>)[key];
+
+            if (resolvedUrl) {
+              node.properties.src = resolvedUrl;
+            } else {
+              // 尝试不解码的情况 (Fallback)
+              const imageAbsPathRaw = path.resolve(path.dirname(fullPath), src);
+              let relPathRaw = path.relative(process.cwd(), imageAbsPathRaw);
+              relPathRaw = relPathRaw.split(path.sep).join("/");
+              const keyRaw = "/" + relPathRaw;
+              const resolvedUrlRaw = (images as Record<string, string>)[keyRaw];
+
+              if (resolvedUrlRaw) {
+                node.properties.src = resolvedUrlRaw;
+              } else {
+                console.warn(
+                  `[MarkdownRenderer] Could not resolve image: ${src} in ${filePath}. Key searched: ${key}`,
+                );
+              }
+            }
+          } catch (e) {
+            console.error(
+              `[MarkdownRenderer] Error parsing image src: ${src}`,
+              e,
+            );
+          }
+        }
+      }
+    });
+  };
+}
+
 // 创建处理器
 const processor = unified()
   .use(remarkParse)
@@ -39,6 +115,7 @@ const processor = unified()
   .use(remarkMathFlag)
   .use(remarkCallout)
   .use(remarkRehype, { allowDangerousHtml: true })
+  .use(rehypeResolveRelativeAssets) // 解析相对路径图片 - 需在其他 rehype 插件前执行，或尽早执行
   .use(rehypeSlug) // Add stable IDs to headings
   .use(rehypeResolveInternalLinks, { contentDir })
   .use(rehypeMarkExternalLinks)
@@ -97,43 +174,17 @@ const vfile = await processor.process({
 const htmlContent = String(vfile);
 ---
 
-  <article set:html={htmlContent} />
+<article set:html={htmlContent} />
 
-  <style>
-    /* 外部链接图标 */
-    .external {
-      position: relative;
-      padding-right: 1.2em;
-    }
-
-    .external::after {
-      content: "";
-      position: absolute;
-      right: 0;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 1ex;
-      height: 1ex;
-      background-image: url("data:image/svg+xml,%3Csvg height='1ex' viewBox='0 0 512 512'%3E%3Cpath d='M320 0H288V64h32 82.7L201.4 265.4 178.7 288 224 333.3l22.6-22.6L448 109.3V192v32h64V192 32 0H480 320zM32 32H0V64 480v32H32 456h32V480 352 320H424v32 96H64V96h96 32V32H160 32z'%3E%3C/path%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: center;
-      background-size: contain;
-      opacity: 0.6;
-      transition: opacity 0.2s;
-    }
-
-    .external:hover::after {
-      opacity: 1;
-    }
-
-    /* Callout 样式 */
-    .callout {
-      margin: 1rem 0;
-      padding: 0;
-      border-radius: 0.5rem;
-      border: 1px solid rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-    }
+<style>
+  /* Callout 样式 */
+  .callout {
+    margin: 1rem 0;
+    padding: 0;
+    border-radius: 0.5rem;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
 
   .callout-title {
     display: flex;
@@ -407,12 +458,30 @@ const htmlContent = String(vfile);
         border: "1px solid rgba(0, 0, 0, 0.2)",
         borderRadius: "0.25rem",
         cursor: "pointer",
-        transition: "background-color 0.2s",
+        transition: "background-color 0.2s, opacity 0.2s",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
         zIndex: "10",
       });
+
+      // 只有在支持 hover 的设备上才默认隐藏，hover 时显示
+      pre.style.position = "relative";
+      if (window.matchMedia("(hover: hover)").matches) {
+        button.style.opacity = "0";
+
+        const show = () => (button.style.opacity = "1");
+        const hide = () => (button.style.opacity = "0");
+
+        pre.addEventListener("mouseenter", show);
+        pre.addEventListener("mouseleave", hide);
+
+        // 键盘访问支持
+        button.addEventListener("focus", show);
+        button.addEventListener("blur", hide);
+      } else {
+        button.style.opacity = "1";
+      }
 
       // 深色模式适配
       const isDark =

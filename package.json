@@ -8,7 +8,9 @@
     "build": "astro build",
     "preview": "astro preview",
     "astro": "astro",
-    "test": "vitest"
+    "test": "vitest",
+    "generate-redirects": "node scripts/generate-redirects.cjs",
+    "test-redirects": "node scripts/test-redirects.cjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^4.3.13",
