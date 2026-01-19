@@ -13,6 +13,7 @@ import { Github, Copy, Check } from "@lucide/astro";
 import { GITHUB_BRANCH, GITHUB_REPO, PROJECT_ROOT } from "../consts";
 import FolderFileList from "../components/FolderFileList.astro";
 import { PathMapper } from "../utils/path-mapper/path-mapper.js";
+import { getDataEntryById, getEntry } from "astro:content";
 
 type Props = CollectionEntry<"blog">["data"] & {
 	id?: string;
@@ -57,11 +58,10 @@ const {
 const mapper = await PathMapper.getInstance({ contentDir: "src/content/blog" });
 
 const githubUrl = id
-	? (() => {
-		const meta = mapper.getFileMetadataByRelativePath(id);
-		const filePath = meta?.originalFilePath || id;
-		return `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${PROJECT_ROOT}/${filePath}`;
-	})()
+	? await (async () => {
+			const meta = await getEntry("blog", id);
+			return `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${meta?.filePath ?? id}`;
+		})()
 	: null;
 
 // Prepare folder items if this is a folder note
