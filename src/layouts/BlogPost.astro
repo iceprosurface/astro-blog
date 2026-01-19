@@ -12,6 +12,7 @@ import { Github, Copy, Check } from "@lucide/astro";
 
 import { GITHUB_BRANCH, GITHUB_REPO, PROJECT_ROOT } from "../consts";
 import FolderFileList from "../components/FolderFileList.astro";
+import { PathMapper } from "../utils/path-mapper/path-mapper.js";
 
 type Props = CollectionEntry<"blog">["data"] & {
 	id?: string;
@@ -52,8 +53,15 @@ const {
 	folderChildren, // From contentSchema
 } = Astro.props;
 
+// Initialize PathMapper
+const mapper = await PathMapper.getInstance({ contentDir: "src/content/blog" });
+
 const githubUrl = id
-	? `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${PROJECT_ROOT}/${encodeURIComponent(id.replace(/\.mdx?$/, "") + ".md")}`
+	? (() => {
+		const meta = mapper.getFileMetadataByRelativePath(id);
+		const filePath = meta?.originalFilePath || id;
+		return `${GITHUB_REPO}/blob/${GITHUB_BRANCH}/${PROJECT_ROOT}/${filePath}`;
+	})()
 	: null;
 
 // Prepare folder items if this is a folder note
@@ -116,10 +124,7 @@ if (folderChildren) {
 		id === "index.mdx")
 ) {
 	// Fallback using PathMapper for index files without explicit folderChildren in frontmatter
-	const { PathMapper } = await import("../utils/path-mapper/path-mapper");
-	const mapper = await PathMapper.getInstance({
-		contentDir: "src/content/blog",
-	});
+	// mapper is already initialized above
 
 	// Determine folder path from file id
 	let folderPath = "";

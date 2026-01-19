@@ -450,6 +450,7 @@ export class PathMapper {
 				childrenFileIds: [],
 				forwardLinks: [],
 				backwardLinks: [],
+				originalFilePath: post.id,  // 保存原始文件路径（保留空格等字符）
 			};
 
 			// 添加到核心索引

@@ -127,6 +127,9 @@ export interface FileMetadata {
 
 	/** 后向链接（引用此文件的永久链接列表） */
 	backwardLinks: Permalink[];
+
+	/** 原始文件路径（来自 post.id，保留原始空格等字符） */
+	originalFilePath?: string;
 }
 
 /**
