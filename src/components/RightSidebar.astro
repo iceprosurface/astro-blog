@@ -16,7 +16,7 @@ const { headings = [], permalink } = Astro.props;
         <div>
           <p>关系图谱</p>
           <section class="graph-container">
-            <Graph client:load currentPermalink={permalink} />
+            <Graph client:idle currentPermalink={permalink} />
           </section>
         </div>
       )
