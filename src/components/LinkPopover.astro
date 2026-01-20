@@ -141,6 +141,12 @@
   }
 
   function init() {
+    // Check if device supports hover (desktop) - disable on mobile/touch devices
+    const supportsHover = window.matchMedia('(hover: hover)').matches;
+    if (!supportsHover) {
+      return; // Skip hover behavior on mobile devices
+    }
+
     // Listen on the whole document to catch links everywhere (sidebars, main, etc)
     document.addEventListener("mouseover", (e) => {
       const target = e.target;
