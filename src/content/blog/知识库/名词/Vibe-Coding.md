@@ -8,7 +8,7 @@ tags:
 ccby: false
 draft: false
 comments: true
-no-rss: false
+no-rss: true
 ---
 
 Vibe Coding 是一种新兴的软件开发实践，由 OpenAI 联合创始人 Andrej Karpathy 在 2025 年初提出。它描述了一种工作流程：开发者不再逐行编写代码，而是通过自然语言提示（Prompt）指导 AI 生成、运行、测试和调试代码。

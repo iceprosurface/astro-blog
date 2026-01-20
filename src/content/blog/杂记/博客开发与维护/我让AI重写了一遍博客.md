@@ -7,7 +7,6 @@ tags:
   - 博客开发
   - AI
 ccby: true
-draft: true
 comments: true
 no-rss: false
 ---
