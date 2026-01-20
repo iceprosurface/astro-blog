@@ -29,9 +29,9 @@ interface Props {
 const { page } = Astro.props;
 ---
 
-<BaseLayout title={`文章列表 - ${SITE_TITLE}`} description={SITE_DESCRIPTION}>
+<BaseLayout title={`文章归档 - ${SITE_TITLE}`} description={SITE_DESCRIPTION}>
 	<section>
-		<h1 style="margin-bottom: 2rem;">所有文章</h1>
+		<h1 style="margin-bottom: 2rem;">文章归档</h1>
 		<PostList posts={page.data} />
 
 		<Pagination

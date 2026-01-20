@@ -92,31 +92,36 @@
 
 .modal-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
-  padding: 16px 24px;
+  padding: 12px;
   background: transparent;
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
   z-index: 10;
   pointer-events: none;
 }
 
-.modal-header h2 {
-  margin: 0;
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--graph-header-text);
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+.modal-header-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
   pointer-events: auto;
+  background: var(--graph-bg);
+  padding: 8px 16px;
+  border-radius: 24px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  border: 1px solid var(--graph-link);
+  min-width: 200px;
+  justify-content: center;
 }
 
 .modal-close-btn {
-  background: var(--graph-bg);
-  border: 1px solid var(--graph-link);
-  padding: 0.6rem;
+  background: transparent;
+  border: none;
+  padding: 0.4rem;
   border-radius: 50%;
   cursor: pointer;
   display: flex;
@@ -124,15 +129,72 @@
   justify-content: center;
   color: var(--darkgray);
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   pointer-events: auto;
 }
 
 .modal-close-btn:hover {
   background-color: var(--graph-node-current);
   color: white;
-  border-color: var(--graph-node-current);
   transform: rotate(90deg);
+}
+
+.mode-toggle-container {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+}
+
+.mode-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--darkgray);
+  transition: color 0.15s ease;
+  min-width: 32px;
+  text-align: center;
+}
+
+.mode-label-focus.active {
+  color: var(--graph-node-current);
+  font-weight: 600;
+}
+
+.mode-label-full.active {
+  color: var(--graph-node-current);
+  font-weight: 600;
+}
+
+.mode-toggle-switch {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  background: var(--graph-link);
+  border-radius: 12px;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.toggle-slider {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background: white;
+  border-radius: 50%;
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  will-change: transform;
+}
+
+.toggle-slider.full {
+  transform: translateX(20px);
+}
+
+.mode-toggle-switch:hover {
+  background: var(--graph-node-visited);
 }
 
 .modal-body {

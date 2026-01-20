@@ -7,7 +7,8 @@ import { SITE_TITLE } from "../consts";
 		<div class="header-left">
 			<h2>
 				<a href="/" class="header-link">首页</a>
-				<a href="/blog" class="header-link">目录</a>
+				<a href="/blog" class="header-link">归档</a>
+				<a href="/folder" class="header-link">目录</a>
 			</h2>
 		</div>
 		<style>
@@ -211,6 +212,28 @@ import { SITE_TITLE } from "../consts";
 	}
 
 	@media (max-width: 720px) {
+		nav {
+			height: 3.5rem;
+		}
+
+		.header-left {
+			gap: 0.8em;
+		}
+
+		.header-link {
+			font-size: 0.9rem;
+		}
+
+		h2 {
+			display: flex;
+			gap: 0.4em;
+			font-size: 0.95rem;
+		}
+
+		.header-right {
+			gap: 0.8rem;
+		}
+
 		.search p {
 			display: none;
 		}
@@ -219,7 +242,8 @@ import { SITE_TITLE } from "../consts";
 		}
 		#search-icon {
 			padding: 0 0.5rem;
-			width: 2.2rem;
+			width: 2rem;
+			height: 2rem;
 			justify-content: center;
 		}
 	}

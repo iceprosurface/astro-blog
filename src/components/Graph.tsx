@@ -70,8 +70,6 @@ const CONFIG = {
   fontSize: 10,
   opacityScale: 3,
   focusOnHover: true,
-  centerAlpha: 1,
-  neighborAlpha: 0.75,
 };
 
 function FullGraphModal({
@@ -86,12 +84,13 @@ function FullGraphModal({
   currentPermalink?: string;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const [viewMode, setViewMode] = useState<'focus' | 'full'>('focus');
 
   useEffect(() => {
     if (isOpen && containerRef.current) {
-      renderFullGraph(containerRef.current, getCurrentOrPropPermalink(currentPermalink));
+      renderFullGraph(containerRef.current, getCurrentOrPropPermalink(currentPermalink), viewMode);
     }
-  }, [isOpen, themeVersion]);
+  }, [isOpen, themeVersion, viewMode]);
 
   if (!isOpen) return null;
 
@@ -99,12 +98,26 @@ function FullGraphModal({
     <div className="graph-modal active" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="modal-content">
         <div className="modal-header">
-          <h2></h2>
-          <button className="modal-close-btn" onClick={onClose}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M18 6L6 18M6 6l12 12"></path>
-            </svg>
-          </button>
+          <div className="modal-header-controls">
+            <div
+              className="mode-toggle-container"
+              onClick={(e) => {
+                e.stopPropagation();
+                setViewMode(viewMode === 'focus' ? 'full' : 'focus');
+              }}
+            >
+              <span className={`mode-label mode-label-focus ${viewMode === 'focus' ? 'active' : ''}`}>专注</span>
+              <div className="mode-toggle-switch">
+                <div className={`toggle-slider ${viewMode}`}></div>
+              </div>
+              <span className={`mode-label mode-label-full ${viewMode === 'full' ? 'active' : ''}`}>全图</span>
+            </div>
+            <button className="modal-close-btn" onClick={onClose}>
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 6L6 18M6 6l12 12"></path>
+              </svg>
+            </button>
+          </div>
         </div>
         <div className="modal-body">
           <div ref={containerRef} className="full-graph-container"></div>
@@ -116,7 +129,7 @@ function FullGraphModal({
 }
 
 // Render full graph with all nodes
-async function renderFullGraph(container: HTMLDivElement, currentId: string) {
+async function renderFullGraph(container: HTMLDivElement, currentId: string, viewMode: 'focus' | 'full' = 'focus') {
   if (!container) return;
 
   // Clear previous graph
@@ -190,52 +203,54 @@ async function renderFullGraph(container: HTMLDivElement, currentId: string) {
     });
   }
 
-  // Render nodes
-  const renderedNodes: RenderedNode[] = [];
-  const centerId = currentNode?.id || '';
+    // Render nodes
+    const renderedNodes: RenderedNode[] = [];
+    const centerId = currentNode?.id || '';
 
-  for (const node of nodes) {
-    const radius = getNodeRadius(node, links);
-    const color = getNodeColor(node, theme);
-    const distance = getNodeDistanceFromCenter(node.id, links, centerId);
+    for (const node of nodes) {
+      const radius = getNodeRadius(node, links);
+      const color = getNodeColor(node, theme);
+      const distance = getNodeDistanceFromCenter(node.id, links, centerId);
 
-    const graphics = new Graphics({
-      interactive: true,
-      eventMode: "static",
-      hitArea: new Circle(0, 0, radius),
-      cursor: "pointer",
-    })
-      .circle(0, 0, radius)
-      .fill({ color })
-      .stroke({ width: 2, color: theme.background });
+      const graphics = new Graphics({
+        interactive: true,
+        eventMode: "static",
+        hitArea: new Circle(0, 0, radius),
+        cursor: "pointer",
+      })
+        .circle(0, 0, radius)
+        .fill({ color })
+        .stroke({ width: 2, color: theme.background });
 
-    // Label
-    const label = new Text({
-      interactive: false,
-      eventMode: "none",
-      text: node.text,
-      alpha: distance === 0 ? CONFIG.centerAlpha : distance === 1 ? CONFIG.neighborAlpha : 0,
-      anchor: { x: 0.5, y: 1.8 },
-      style: {
-        fontSize: distance === 0 ? 10 : 9,
-        fill: theme.label,
-        fontFamily:
-          "PingFang SC, Microsoft YaHei, -apple-system, BlinkMacSystemFont, sans-serif",
-      },
-      resolution: window.devicePixelRatio * 4,
-    });
+      const alpha = viewMode === 'focus' ? calculateNodeAlpha(distance) : 1;
 
-    nodeContainer.addChild(graphics);
-    labelContainer.addChild(label);
+      // Label
+      const label = new Text({
+        interactive: false,
+        eventMode: "none",
+        text: node.text,
+        alpha: viewMode === 'focus' ? alpha : 1,
+        anchor: { x: 0.5, y: 1.8 },
+        style: {
+          fontSize: distance === 0 ? 10 : 9,
+          fill: theme.label,
+          fontFamily:
+            "PingFang SC, Microsoft YaHei, -apple-system, BlinkMacSystemFont, sans-serif",
+        },
+        resolution: window.devicePixelRatio * 4,
+      });
 
-    renderedNodes.push({
-      data: node,
-      graphics,
-      label,
-      color,
-      alpha: 1,
-    });
-  }
+      nodeContainer.addChild(graphics);
+      labelContainer.addChild(label);
+
+      renderedNodes.push({
+        data: node,
+        graphics,
+        label,
+        color,
+        alpha: viewMode === 'focus' ? alpha : 1,
+      });
+    }
 
   // Hover state
   let hoveredNodeId: string | null = null;
@@ -246,7 +261,6 @@ async function renderFullGraph(container: HTMLDivElement, currentId: string) {
     const hoveredNeighbors = new Set<string>();
 
     if (newHoverId) {
-      // Find all neighbors of hovered node
       for (const link of links) {
         if (link.source.id === newHoverId || link.target.id === newHoverId) {
           hoveredNeighbors.add(link.source.id);
@@ -255,28 +269,35 @@ async function renderFullGraph(container: HTMLDivElement, currentId: string) {
       }
     }
 
-    // Update links
+    const focusNode = newHoverId ?? centerId;
+
     for (const link of renderedLinks) {
+      const isHoverRelated = newHoverId &&
+        (link.data.source.id === newHoverId || link.data.target.id === newHoverId);
       const isActive =
-        newHoverId === null ||
-        link.data.source.id === newHoverId ||
-        link.data.target.id === newHoverId;
-      link.alpha = isActive ? 1 : 0.1;
+        link.data.source.id === focusNode || link.data.target.id === focusNode;
+
+      if (newHoverId) {
+        link.alpha = isHoverRelated ? 1 : 0.1;
+      } else {
+        const distance = Math.min(
+          getNodeDistanceFromCenter(link.data.source.id, links, focusNode),
+          getNodeDistanceFromCenter(link.data.target.id, links, focusNode)
+        );
+        link.alpha = isActive ? 1 : Math.max(0.1, calculateNodeAlpha(distance) - 0.2);
+      }
     }
 
-    // Update nodes
     for (const node of renderedNodes) {
-      const isActive =
-        newHoverId === null || hoveredNeighbors.has(node.data.id);
-      node.alpha = isActive ? 1 : 0.15;
-
-      const distance = getNodeDistanceFromCenter(node.data.id, links, centerId);
-      if (distance === 0) {
-        node.label.alpha = CONFIG.centerAlpha;
-      } else if (distance === 1) {
-        node.label.alpha = newHoverId === null || hoveredNeighbors.has(node.data.id) ? CONFIG.neighborAlpha : 0.7;
+      if (newHoverId) {
+        const isHoveredOrNeighbor = hoveredNeighbors.has(node.data.id);
+        node.alpha = isHoveredOrNeighbor ? 1 : 0.2;
+        node.label.alpha = isHoveredOrNeighbor ? 1 : 0.2;
       } else {
-        node.label.alpha = isActive ? 0.6 : 0.1;
+        const distance = getNodeDistanceFromCenter(node.data.id, links, centerId);
+        const nodeAlpha = viewMode === 'focus' ? calculateNodeAlpha(distance) : 1;
+        node.alpha = nodeAlpha;
+        node.label.alpha = nodeAlpha;
       }
     }
   }
@@ -315,9 +336,11 @@ async function renderFullGraph(container: HTMLDivElement, currentId: string) {
         if (node.data.id !== hoveredNodeId) {
           const distance = getNodeDistanceFromCenter(node.data.id, links, currentId);
           if (distance <= 1) {
-            node.label.alpha = distance === 0 ? CONFIG.centerAlpha : CONFIG.neighborAlpha;
+            node.label.alpha = distance === 0 ? 1 : 0.85;
           } else {
-            node.label.alpha = scaleOpacity * node.alpha;
+            // In full mode, maintain consistent opacity based on zoom
+            const baseOpacity = viewMode === 'focus' ? node.alpha : 1;
+            node.label.alpha = Math.max(scaleOpacity * baseOpacity, 0.3);
           }
         }
       }
@@ -537,6 +560,15 @@ function getNodeDistanceFromCenter(
   return Infinity;
 }
 
+function calculateNodeAlpha(distance: number): number {
+  // 线性衰减：距离每增加1，alpha减少0.15，最低0.05
+  if (distance === 0) return 1;
+  if (distance === Infinity) return 0;
+
+  const alpha = 1 - (distance * 0.15);
+  return Math.max(0.05, alpha);
+}
+
 // Main Graph component
 export default function Graph({ currentPermalink }: GraphProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -703,7 +735,7 @@ export default function Graph({ currentPermalink }: GraphProps) {
         interactive: false,
         eventMode: "none",
         text: node.text,
-        alpha: distance === 0 ? CONFIG.centerAlpha : distance === 1 ? CONFIG.neighborAlpha : 0,
+        alpha: calculateNodeAlpha(distance),
         anchor: { x: 0.5, y: 1.8 },
         style: {
           fontSize: distance === 0 ? CONFIG.fontSize * 1.1 : CONFIG.fontSize,
@@ -723,7 +755,7 @@ export default function Graph({ currentPermalink }: GraphProps) {
         graphics,
         label,
         color,
-        alpha: 1,
+        alpha: calculateNodeAlpha(distance),
       });
     }
 
@@ -744,27 +776,22 @@ export default function Graph({ currentPermalink }: GraphProps) {
         }
       }
 
+      const focusNode = newHoverId ?? centerNodeId;
+
       for (const link of renderedLinks) {
         const isActive =
-          newHoverId === null ||
-          link.data.source.id === newHoverId ||
-          link.data.target.id === newHoverId;
-        link.alpha = isActive ? 1 : 0.2;
+          link.data.source.id === focusNode || link.data.target.id === focusNode;
+        const distance = Math.min(
+          getNodeDistanceFromCenter(link.data.source.id, links, focusNode),
+          getNodeDistanceFromCenter(link.data.target.id, links, focusNode)
+        );
+        link.alpha = isActive ? 1 : Math.max(0.1, calculateNodeAlpha(distance) - 0.2);
       }
 
       for (const node of renderedNodes) {
-        const isActive =
-          newHoverId === null || hoveredNeighbors.has(node.data.id);
-        node.alpha = CONFIG.focusOnHover ? (isActive ? 1 : 0.2) : 1;
-
-        const distance = getNodeDistanceFromCenter(node.data.id, links, centerNodeId);
-        if (distance === 0) {
-          node.label.alpha = CONFIG.centerAlpha;
-        } else if (distance === 1) {
-          node.label.alpha = newHoverId === null || hoveredNeighbors.has(node.data.id) ? CONFIG.neighborAlpha : 0.8;
-        } else {
-          node.label.alpha = isActive ? CONFIG.neighborAlpha : 0;
-        }
+        const distance = getNodeDistanceFromCenter(node.data.id, links, focusNode);
+        node.alpha = calculateNodeAlpha(distance);
+        node.label.alpha = calculateNodeAlpha(distance);
       }
     }
 
@@ -844,9 +871,9 @@ export default function Graph({ currentPermalink }: GraphProps) {
               if (node.data.id !== hoveredNodeId) {
                 const distance = getNodeDistanceFromCenter(node.data.id, links, centerNodeId);
                 if (distance <= 1) {
-                  node.label.alpha = distance === 0 ? CONFIG.centerAlpha : CONFIG.neighborAlpha;
+                  node.label.alpha = distance === 0 ? 1 : 0.85;
                 } else {
-                  node.label.alpha = scaleOpacity * node.alpha;
+                  node.label.alpha = Math.max(scaleOpacity * node.alpha, 0.3);
                 }
               }
             }

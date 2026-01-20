@@ -16,9 +16,9 @@
 	--graph-header-text: #334155;
 	--graph-link: #e2e8f0;
 	--graph-label: #475569;
-	--graph-node-current: #f43f5e;
-	--graph-node-visited: #06b6d4;
-	--graph-node-default: #cbd5e1;
+	--graph-node-current: var(--accent);
+	--graph-node-visited: var(--accent-dark);
+	--graph-node-default: var(--accent-dark);
 
 	--strong-em-color-1: #ff8a00;
 	--strong-em-color-2: #e52e71;
@@ -65,9 +65,9 @@
 	--graph-header-text: #f1f5f9;
 	--graph-link: #1e293b;
 	--graph-label: #94a3b8;
-	--graph-node-current: #fb7185;
-	--graph-node-visited: #22d3ee;
-	--graph-node-default: #334155;
+	--graph-node-current: var(--accent);
+	--graph-node-visited: var(--accent-dark);
+	--graph-node-default: var(--accent-dark);
 
 	--strong-em-color-1: #ff9d2e;
 	--strong-em-color-2: #ff4d8d;
