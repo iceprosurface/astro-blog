@@ -66,3 +66,11 @@ jobs:
           cache-from: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache
           cache-to: type=registry,ref=ghcr.io/${{ github.repository }}:buildcache,mode=max
           platforms: linux/amd64,linux/arm64
+
+      - name: Clean up old images
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: astro-blog
+          package-type: container
+          min-versions-to-keep: 10
+          delete-only-untagged-versions: false
