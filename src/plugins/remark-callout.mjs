@@ -1,49 +1,64 @@
 export default function remarkCallout() {
-console.log("[remark-callout] Plugin loaded");
+  console.log("[remark-callout] Plugin loaded");
   return (tree) => {
     function visit(node, index, parent) {
       if (node.type === 'blockquote') {
         const firstChild = node.children[0];
         if (firstChild?.type === 'paragraph' && firstChild.children[0]?.type === 'text') {
           const textNode = firstChild.children[0];
-          const match = textNode.value.match(/^\[!(\w+)\][+-]? ?(.*)/);
-          
+          const match = textNode.value.match(/^\[!(\w+)\]([+-])? ?(.*)/);
+
           if (match) {
             const calloutType = match[1].toLowerCase();
-            const titleLine = match[2];
+            const collapse = match[2];
+            const titleLine = match[3];
+            const isCollapsible = collapse !== undefined;
 
             // Set blockquote properties
             node.data = node.data || {};
-            node.data.hName = 'div';
+            node.data.hName = isCollapsible ? 'details' : 'div';
             node.data.hProperties = {
               ...(node.data.hProperties || {}),
               className: `callout ${calloutType}`,
               'data-callout': calloutType
             };
 
+            if (isCollapsible && collapse === '+') {
+              node.data.hProperties.open = true;
+            }
+
             const titleContent = titleLine || (calloutType.charAt(0).toUpperCase() + calloutType.slice(1));
-            
+
             // Create title child
+            const titleChildren = [
+              {
+                type: 'html',
+                value: '<div class="callout-icon"></div>'
+              },
+              {
+                type: 'paragraph',
+                data: {
+                  hName: 'div',
+                  hProperties: { className: 'callout-title-inner' }
+                },
+                children: [{ type: 'text', value: titleContent }]
+              }
+            ];
+
+            if (isCollapsible) {
+              titleChildren.push({
+                type: 'html',
+                value: '<div class="callout-fold"></div>'
+              });
+            }
+
             const titleNode = {
               type: 'paragraph',
               data: {
-                hName: 'div',
+                hName: isCollapsible ? 'summary' : 'div',
                 hProperties: { className: 'callout-title' }
               },
-              children: [
-                {
-                  type: 'html',
-                  value: '<div class="callout-icon"></div>'
-                },
-                {
-                  type: 'paragraph',
-                  data: {
-                    hName: 'div',
-                    hProperties: { className: 'callout-title-inner' }
-                  },
-                  children: [{ type: 'text', value: titleContent }]
-                }
-              ]
+              children: titleChildren
             };
 
             // Remove the [!tip] prefix from the first child text

@@ -96,15 +96,31 @@ const { title, description, image, hasMath } = Astro.props;
 {image && <meta property="og:image" content={new URL(image.src, Astro.url)} />}
 
 <!-- Google Analytics -->
-<script async defer src="https://www.googletagmanager.com/gtag/js?id=G-6X691M6ZVW"></script>
-<script is:inline>
-	window.dataLayer = window.dataLayer || [];
-	function gtag() {
-		dataLayer.push(arguments);
-	}
-	gtag('js', new Date());
-	gtag('config', 'G-6X691M6ZVW');
-</script>
+<!-- Google Analytics -->
+{
+	import.meta.env.PROD && (
+		<>
+			<script async defer src="https://www.googletagmanager.com/gtag/js?id=G-6X691M6ZVW" />
+			<script is:inline>
+				window.dataLayer = window.dataLayer || [];
+				function gtag() {{
+					dataLayer.push(arguments);
+				}}
+				gtag('js', new Date());
+				gtag('config', 'G-6X691M6ZVW');
+			</script>
+		</>
+	)
+}
 
 <!-- Umami Analytics -->
-<script async defer data-website-id="cdf3e238-4ec3-4428-8449-91b9ffbe8c03" src="https://umami.iceprosurface.com/script.js"></script>
+{
+	import.meta.env.PROD && (
+		<script
+			async
+			defer
+			data-website-id="cdf3e238-4ec3-4428-8449-91b9ffbe8c03"
+			src="https://umami.iceprosurface.com/script.js"
+		/>
+	)
+}

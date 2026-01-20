@@ -1,4 +1,5 @@
 @import '../components/SearchModal.css';
+@import './callout-fold.css';
 
 :root {
 	--light: #faf8f8;
@@ -437,7 +438,8 @@ hr {
 	--callout-icon: var(--callout-icon-question)
 }
 
-.callout[data-callout="warning"] {
+.callout[data-callout="warning"],
+.callout[data-callout="caution"] {
 	--color: #db8942;
 	--border: #db894244;
 	--bg: #db894210;
@@ -466,6 +468,13 @@ hr {
 	--border: #7a43b544;
 	--bg: #7a43b510;
 	--callout-icon: var(--callout-icon-example)
+}
+
+.callout[data-callout="important"] {
+	--color: #00bfa5;
+	--border: #00bfa544;
+	--bg: #00bfa510;
+	--callout-icon: var(--callout-icon-tip)
 }
 
 .callout[data-callout="quote"] {

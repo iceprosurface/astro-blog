@@ -1,0 +1,35 @@
+/* Collapsible Callouts */
+details.callout>summary {
+    list-style: none;
+    /* Hide default marker */
+    cursor: pointer;
+}
+
+details.callout>summary::-webkit-details-marker {
+    display: none;
+    /* Hide default marker in Chrome/Safari */
+}
+
+.callout-fold {
+    width: 18px;
+    height: 18px;
+    background-color: var(--gray);
+    mask-image: var(--callout-icon-fold);
+    mask-size: 100%;
+    mask-repeat: no-repeat;
+    mask-position: center;
+    -webkit-mask-image: var(--callout-icon-fold);
+    -webkit-mask-size: 100%;
+    -webkit-mask-repeat: no-repeat;
+    -webkit-mask-position: center;
+    transition: transform 0.2s ease;
+}
+
+details.callout[open] .callout-fold {
+    transform: rotate(90deg);
+}
+
+details.callout:not([open]) .callout-fold {
+    transform: rotate(0deg);
+    /* Explicitly set for transition */
+}

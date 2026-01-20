@@ -94,8 +94,15 @@ const {
 			};
 
 			renderMermaid();
-
 			document.addEventListener("astro:after-swap", renderMermaid);
+
+			const setupCallouts = async () => {
+				const { initCalloutAnimations } =
+					await import("../scripts/callout-animation.js");
+				initCalloutAnimations();
+			};
+			setupCallouts();
+			document.addEventListener("astro:after-swap", setupCallouts);
 		</script>
 	</body>
 </html>
