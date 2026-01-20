@@ -57,4 +57,43 @@
 
 ## 📄 协议 / License
 
-本项目基于 [MIT License](./LICENSE) 开源。
+此项目的授权分为两部分：
+
+### 1. 代码部分 / Source Code
+
+本博客的源代码（包括但不限于 HTML, CSS, JavaScript, 模版文件、组件、插件）采用 [MIT License](./LICENSE) 授权。
+
+The source code of this blog is licensed under the **MIT License**.
+
+### 2. 内容部分 / Creative Content
+
+本博客的内容授权根据文章类型不同，遵循以下原则：
+
+**原创文章**（除非另有说明）：
+- 采用 **[CC BY-NC-SA 4.0](./LICENSE-CONTENT)**（署名-非商业性使用-相同方式共享 4.0 国际）许可协议
+- 转载或使用请遵守署名协议
+- 文章底部会显示永久链接和授权声明
+
+**转载内容**：
+- 文章会显示"注意：本文转载自..."的提示
+- 请遵循原作者的授权声明
+- 阅读原文请点击文章中的原始链接
+
+**知识库/笔记类内容**：
+- 部分书籍笔记、方法论等可能不显示授权声明，因作者无法判断提供合适的授权声明
+
+The blog content licensing follows:
+
+**Original articles** (unless otherwise noted):
+- Licensed under **[CC BY-NC-SA 4.0](./LICENSE-CONTENT)** International License
+- Must comply with attribution requirements when reusing
+
+**Reprinted content**:
+- Shows reprint notice with original source
+- Follow the original author's license
+
+**Knowledge base/notes**:
+- Some content may not show license (personal notes)
+- Use with caution
+
+[![CC BY-NC-SA 4.0](https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png)](./LICENSE-CONTENT)
