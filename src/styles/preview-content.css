@@ -9,9 +9,9 @@
 	--secondary-light: #3a5e77;
 	--tertiary: #84a59d;
 	--highlight: rgba(143, 159, 169, 0.15);
-	--headerFont: sans-serif;
-	--bodyFont: sans-serif;
-	--codeFont: monospace;
+	--headerFont: "LXGW WenKai", sans-serif;
+	--bodyFont: "LXGW WenKai", sans-serif;
+	--codeFont: "LXGW WenKai Mono", monospace;
 	--strong-em-color-1: #ff8a00;
 	--strong-em-color-2: #e52e71;
 

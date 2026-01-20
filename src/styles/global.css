@@ -22,10 +22,10 @@
 
 	--strong-em-color-1: #ff8a00;
 	--strong-em-color-2: #e52e71;
-
-	--headerFont: sans-serif;
-	--bodyFont: sans-serif;
-	--codeFont: monospace;
+ 
+	--headerFont: "LXGW WenKai", sans-serif;
+	--bodyFont: "LXGW WenKai", sans-serif;
+	--codeFont: "LXGW WenKai Mono", monospace;
 
 	--accent: var(--secondary);
 	--accent-dark: var(--tertiary);
