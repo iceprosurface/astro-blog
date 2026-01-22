@@ -20,21 +20,38 @@ export async function getStaticPaths() {
 
 type Props = CollectionEntry<"blog">;
 const post = Astro.props;
+const { render } = await import("astro:content");
+const { remarkPluginFrontmatter } = await render(post);
+const hasMath = remarkPluginFrontmatter?.hasMath;
 
 // 检测用户的暗色模式偏好
-const isDark = Astro.url.searchParams.get('theme') === 'dark' ||
-	Astro.url.searchParams.get('theme') === 'light'
-		? Astro.url.searchParams.get('theme') === 'dark'
+const isDark =
+	Astro.url.searchParams.get("theme") === "dark" ||
+	Astro.url.searchParams.get("theme") === "light"
+		? Astro.url.searchParams.get("theme") === "dark"
 		: false;
 ---
 
 <!doctype html>
-<html lang="zh-CN" class={isDark ? 'dark' : ''}>
+<html lang="zh-CN" class={isDark ? "dark" : ""}>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width,initial-scale=1" />
-		<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/lxgw-wenkai-webfont/1.7.0/style.css" />
+		<link
+			rel="stylesheet"
+			href="https://cdnjs.cloudflare.com/ajax/libs/lxgw-wenkai-webfont/1.7.0/style.css"
+		/>
 		<link rel="stylesheet" href="/preview-content.css" />
+		{
+			hasMath && (
+				<link
+					rel="stylesheet"
+					href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css"
+					integrity="sha384-n8MVd4RsNIU0tAv4ct0nTaAbDJwPJzDEaqSD1odI+WdtXRGWt2kTvGFasHpSy3SV"
+					crossorigin="anonymous"
+				/>
+			)
+		}
 	</head>
 	<body>
 		<div data-search-preview>

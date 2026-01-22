@@ -120,7 +120,8 @@ export async function getStaticPaths() {
 }
 
 const renderResult = await render(post);
-const { headings } = renderResult;
+const { headings, remarkPluginFrontmatter } = renderResult;
+const hasMath = remarkPluginFrontmatter?.hasMath ?? post.data.hasMath;
 
 // 计算阅读时间
 const getReadingTime = (text: string) => {
@@ -131,7 +132,10 @@ const getReadingTime = (text: string) => {
 const readingTime = getReadingTime(post.body || "");
 
 // 生成文章摘要（如果没有 description）
-const generateDescription = (content: string, maxLength: number = 160): string => {
+const generateDescription = (
+	content: string,
+	maxLength: number = 160,
+): string => {
 	// 移除 markdown 标记
 	let clean = content
 		.replace(/^---[\s\S]*?---/g, "") // 移除 frontmatter
@@ -218,6 +222,7 @@ if (currentMeta && currentMeta.forwardLinks) {
 	forwardLinks={forwardLinks}
 	relativePath={originalRelativePath}
 	permalink={post.data.permalink}
+	hasMath={hasMath}
 >
 	<MarkdownRenderer content={post.body || ""} filePath={post.id} />
 </BlogPost>

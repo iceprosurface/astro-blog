@@ -19,6 +19,7 @@ const blog = defineCollection({
 			['no-rss']: z.boolean().optional().default(false),
 			draft: z.boolean().default(false),
 			comments: z.boolean().optional().default(true),
+			hasMath: z.boolean().optional(),
 			// 转载/非原创相关元数据
 			'origin-link': z.string().optional().nullable(),
 			'origin-author': z.string().optional().nullable(),
