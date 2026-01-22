@@ -28,8 +28,8 @@ no-rss: true
 
 ### 进一步佐证：GPT-5.2 在极难数学命题上的突破
 如果说 Haskell 是“语言范式”的胜利，那么 **GPT-5.2** 最近在数学界的表现则是“显式逻辑”的终极证明：
-- **突破性战绩**：GPT-5.2 Pro 成功解决了困扰数学界数十年的 **Erdős 猜想问题（#397）**，其生成的证明过程通过了严密的形式化验证，并得到了菲尔兹奖得主 **Terence Tao (陶哲轩)** 的确认。 [来源: eWeek](https://www.eweek.com/ai/openai-gpt-5-2-erdos-problem/)
-- **基准测试的统治力**：在旨在测试 AI 研究能力的 **FrontierMath** 榜单中，GPT-5.2 的“Thinking”版本解决了 40.3% 的难题，并刷新了 **AIME 2025** 的满分纪录。 [来源: Vellum AI](https://www.vellum.ai/blog/openai-gpt-5-2-benchmarks)
+- **突破性战绩**：GPT-5.2 Pro 成功解决了困扰数学界数十年的 **Erdős 猜想问题（#397）**，其生成的证明过程通过了严密的形式化验证，并得到了菲尔兹奖得主 **Terence Tao (陶哲轩)** 的确认。 [来源: eWeek](https://www.eweek.com/news/gpt-5-2-just-solved-a-30-year-math-problem/)
+- **基准测试的统治力**：在旨在测试 AI 研究能力的 **FrontierMath** 榜单中，GPT-5.2 的“Thinking”版本解决了 40.3% 的难题，并刷新了 **AIME 2025** 的满分纪录。 [来源: Vellum AI](https://artificialanalysis.ai/evaluations/aime-2025)
 - **个人推论**：数学证明由于其天然的“显式”且“无歧义”特性，可能为 AI 提供了一个极高信噪比的推理环境。GPT-5.2 在这些领域的表现提示了一个有趣的**可能性**：AI 的能力展现，是否在很大程度上取决于**逻辑的透传效率**？或许，模糊的隐式逻辑是制约 AI 发挥的阻力，而纯粹的显式逻辑才是真正释放其推理潜能的助推器。这一观察如果成立，将极大地改变我们构建 AI 友好型知识与代码的方式。
 
 ## 深度解析
