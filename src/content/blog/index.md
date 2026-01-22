@@ -28,7 +28,8 @@ hello 👋，我是 iceprosurface, 当然一般来说我用 icepro 这个名字�
 
 + [归档](archives/index.md)
 + [知识库入口](知识库/index)
-+ [游戏开发](知识库/游戏开发/index.md) 
++ [卢曼卡片盒 MOC](./知识库/卡片盒_MOC.md)
++ [游戏开发](./知识库/游戏开发/index.md) 
 + [mono 项目最佳实践指南](archives/2024/mono%20项目最佳实践指南.md)
 
 本博客相关的开发构建、开发可以前往下面几个地方查看：
