@@ -127,6 +127,9 @@ export interface FileMetadata {
 
 	/** 后向链接（引用此文件的永久链接列表） */
 	backwardLinks: Permalink[];
+
+	/** 文章标签列表 */
+	tags: string[];
 }
 
 /**

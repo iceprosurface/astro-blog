@@ -450,6 +450,7 @@ export class PathMapper {
 				childrenFileIds: [],
 				forwardLinks: [],
 				backwardLinks: [],
+				tags: post.data.tags || [],
 			};
 
 			// 添加到核心索引

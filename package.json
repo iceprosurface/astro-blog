@@ -46,7 +46,8 @@
     "sharp": "^0.34.3",
     "shiki": "^3.21.0",
     "unified": "^11.0.5",
-    "unist-util-visit": "^5.0.0"
+    "unist-util-visit": "^5.0.0",
+    "zustand": "^5.0.10"
   },
   "devDependencies": {
     "@shikijs/transformers": "^3.21.0",

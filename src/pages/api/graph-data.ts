@@ -21,37 +21,81 @@ export const GET: APIRoute = async () => {
       id: string
       text: string
       visited: boolean
+      nodeType: 'article' | 'tag'
+      tags?: string[]
     }> = []
 
+    const tagSet = new Set<string>()
+
+    // 1. Create Article Nodes
     for (const file of allFiles) {
       if (file.permalink !== undefined && file.permalink !== null) {
         const id = normalizePermalink(file.permalink)
+        const tags = file.tags || []
+
         nodes.push({
           id,
           text: file.title || id || 'Home',
           visited: false,
+          nodeType: 'article',
+          tags
         })
+
+        tags.forEach(tag => tagSet.add(tag))
+
         if (nodes.length <= 10) {
           console.log('[Graph API] Node:', nodes.length, '- id:', file.permalink, '- title:', file.title)
         }
       }
     }
-    console.log('[Graph API] Total nodes:', nodes.length)
 
-    const links: Array<{ source: string; target: string }> = []
-    const permalinkToTitle = new Map(nodes.map((n) => [n.id, n.text]))
+    // 2. Create Tag Nodes
+    for (const tag of tagSet) {
+      nodes.push({
+        id: `/tags/${tag}`, // Use pseudo-path for ID
+        text: `#${tag}`,
+        visited: false,
+        nodeType: 'tag'
+      })
+    }
+
+    console.log('[Graph API] Total nodes:', nodes.length, '(Articles + Tags)')
+
+    const links: Array<{
+      source: string;
+      target: string;
+      linkType: 'reference' | 'tag'
+    }> = []
+
+    // Map for quick lookup to ensure link targets exist
+    const nodeIdSet = new Set(nodes.map(n => n.id))
 
     for (const file of allFiles) {
       if (file.permalink === undefined || file.permalink === null) continue
 
       const source = normalizePermalink(file.permalink)
 
+      // 3. Article Reference Links
       for (const targetPermalink of file.forwardLinks) {
         const target = normalizePermalink(targetPermalink)
-        if (permalinkToTitle.has(target)) {
+        if (nodeIdSet.has(target)) {
           links.push({
             source,
             target,
+            linkType: 'reference'
+          })
+        }
+      }
+
+      // 4. Tag Links
+      const tags = file.tags || []
+      for (const tag of tags) {
+        const target = `/tags/${tag}`
+        if (nodeIdSet.has(target)) {
+          links.push({
+            source,
+            target,
+            linkType: 'tag'
           })
         }
       }
