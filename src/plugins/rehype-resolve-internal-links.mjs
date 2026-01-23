@@ -223,7 +223,8 @@ function resolveLinkPath(linkPath, currentFolderPath, mapper) {
         // Use folderPath from metadata to ensure we link to the folder, not "folder/index"
         if (('subfolders' in targetMeta) || (targetMeta.type === 'index')) {
             const fPath = targetMeta.folderPath;
-            return fPath ? '/folder/' + fPath : '/';
+            const link = fPath ? '/folder/' + fPath : '/';
+            return link.endsWith('/') ? link : `${link}/`;
         }
     }
 
