@@ -35,14 +35,20 @@ export function getNodeRadius(node: NodeData, links: LinkData[]): number {
         (l) => l.source.id === node.id || l.target.id === node.id,
     ).length;
 
-    // Tag 节点大小逻辑：关联越多越大
-    const baseRadius = node.nodeType === 'tag' ? 4 : 3;
-    // 系数可以让 tag 增长得更明显
-    const growthFactor = node.nodeType === 'tag' ? 1.2 : 0.8;
-    // 设置上限
-    const maxRadius = node.nodeType === 'tag' ? 15 : 10;
+    // 增长策略：
+    // 1. 文章节点 (Node) 权重更高，每 3 个链接计为一个标准单位
+    // 2. 标签节点 (Tag) 权重更低，每 6 个链接计为一个标准单位
+    const weight = node.nodeType === 'tag' ? 6 : 3;
+    const baseRadius = 1;
+    const multiplier = 3.5;
 
-    return Math.min(baseRadius + Math.sqrt(numLinks) * growthFactor * 3, maxRadius);
+    // 使用开方 (0.5) 保证 1 -> 3 的快速跳变，以及后续 3 -> 15 的平稳增长
+    const radius = baseRadius + Math.sqrt(numLinks / weight) * multiplier;
+
+    // 分别设置上限
+    const maxRadius = node.nodeType === 'tag' ? 12 : 15;
+
+    return Math.min(radius, maxRadius);
 }
 
 export function getNodeDistanceFromCenter(

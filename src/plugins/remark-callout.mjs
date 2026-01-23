@@ -1,5 +1,5 @@
 export default function remarkCallout() {
-  console.log("[remark-callout] Plugin loaded");
+
   return (tree) => {
     function visit(node, index, parent) {
       if (node.type === 'blockquote') {

@@ -135,18 +135,7 @@ if (folderChildren) {
 		// e.g. "index.md", folderPath is empty root
 		folderPath = "";
 	}
-
-	console.log(`[BlogPost] Debugging Folder List for ID: ${id}`);
-	console.log(`[BlogPost] Normalized ID: ${normalizedId}`);
-	console.log(`[BlogPost] Derived Folder Path: ${folderPath}`);
-
 	const folderMeta = mapper.getFolderMetadataFromRelativePath(folderPath);
-	console.log(`[BlogPost] Folder Meta found:`, folderMeta ? "YES" : "NO");
-	if (folderMeta) {
-		console.log(
-			`[BlogPost] Subfolders: ${folderMeta.subfolders?.length}, Files: ${folderMeta.fileIds?.length}`,
-		);
-	}
 
 	if (folderMeta) {
 		// Add parent link if not root

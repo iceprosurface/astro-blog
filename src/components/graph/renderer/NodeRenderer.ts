@@ -6,12 +6,13 @@ export function createRenderedNode(
     radius: number,
     color: string,
     theme: GraphThemeColors,
-    config: { fontSize: number }
+    config: { fontSize: number },
+    linkCount: number = 0
 ): RenderedNode {
     const graphics = new Graphics({
         interactive: true,
         eventMode: "static",
-        hitArea: new Circle(0, 0, radius),
+        hitArea: new Circle(0, 0, Math.max(radius, 5)),
         cursor: "pointer",
         label: node.id, // Debug label
     });
@@ -47,5 +48,6 @@ export function createRenderedNode(
         alpha: 1,
         targetAlpha: 1,
         baseAlpha: 1,
+        linkCount,
     };
 }

@@ -12,10 +12,10 @@ function normalizePermalink(permalink: string): string {
 
 export const GET: APIRoute = async () => {
   try {
-    console.log('[Graph API] Building data...')
+
     const mapper = await PathMapper.getInstance({ contentDir: 'src/content/blog' })
     const allFiles = mapper.getAllFiles()
-    console.log('[Graph API] Got', allFiles.length, 'files')
+
 
 
 
@@ -45,9 +45,7 @@ export const GET: APIRoute = async () => {
 
         tags.forEach(tag => tagSet.add(tag))
 
-        if (nodes.length <= 10) {
-          console.log('[Graph API] Node:', nodes.length, '- id:', file.permalink, '- title:', file.title)
-        }
+
       }
     }
 
@@ -61,7 +59,7 @@ export const GET: APIRoute = async () => {
       })
     }
 
-    console.log('[Graph API] Total nodes:', nodes.length, '(Articles + Tags)')
+
 
     const links: Array<{
       source: string;

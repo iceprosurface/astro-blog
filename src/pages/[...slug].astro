@@ -74,22 +74,13 @@ export async function getStaticPaths() {
 		// 首先过滤掉所有 excalidraw 的文件
 		.filter((entry) => {
 			if (!entry) {
-				console.log("Skipping null/undefined post");
 				return false;
 			}
 			// Check if post is a valid object with an id
 			if (typeof entry !== "object" || !("id" in entry)) {
-				console.log(
-					"Skipping invalid post object (no id):",
-					JSON.stringify(entry).slice(0, 200),
-				);
 				return false;
 			}
 			if (!entry.id) {
-				console.log(
-					"Skipping post with empty id:",
-					JSON.stringify(entry).slice(0, 200),
-				);
 				return false;
 			}
 			return !entry.id.includes("excalidraw");
@@ -97,19 +88,12 @@ export async function getStaticPaths() {
 		.filter((entry) => {
 			const data = entry.data;
 			if (!data) {
-				console.log(`Skipping post ${entry.id}: No data`);
 				return false;
 			}
 			if (!data.title || !data.permalink) {
-				console.log(
-					`Skipping post ${entry.id}: Missing title or permalink. Title: ${data.title}, Permalink: ${JSON.stringify(data.permalink)}`,
-				);
 				return false;
 			}
 			if (typeof data.permalink !== "string") {
-				console.log(
-					`Skipping post ${entry.id}: Permalink is not a string. Type: ${typeof data.permalink}, Value: ${JSON.stringify(data.permalink)}`,
-				);
 				return false;
 			}
 			return true;

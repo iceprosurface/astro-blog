@@ -140,9 +140,16 @@ export class GraphSimulator {
         });
 
         this.renderedNodes = simNodes.map(node => {
+            // Calculate link count for radius logic and progressive disclosure
+            const linkCount = this.simLinks.filter((l: any) => {
+                const s = typeof l.source === "object" ? l.source.id : l.source;
+                const t = typeof l.target === "object" ? l.target.id : l.target;
+                return s === node.id || t === node.id;
+            }).length;
+
             const radius = getNodeRadius(node, links);
             const color = node.nodeType === 'tag' ? this.theme.nodeTag : (node.isCurrent ? this.theme.nodeCurrent : (node.isVisited ? this.theme.nodeVisited : this.theme.nodeDefault));
-            const rendered = createRenderedNode(node, radius, color, this.theme, { fontSize: this.config.fontSize });
+            const rendered = createRenderedNode(node, radius, color, this.theme, { fontSize: this.config.fontSize }, linkCount);
 
             this.renderer.nodeContainer!.addChild(rendered.graphics);
             this.renderer.labelContainer!.addChild(rendered.label);
@@ -164,19 +171,11 @@ export class GraphSimulator {
                 baseAlpha = calculateNodeAlpha(dist);
             }
 
-            // Calculate link count for progressive disclosure
-            const linkCount = this.simLinks.filter((l: any) => {
-                const s = typeof l.source === "object" ? l.source.id : l.source;
-                const t = typeof l.target === "object" ? l.target.id : l.target;
-                return s === node.id || t === node.id;
-            }).length;
-
             return {
                 ...rendered,
                 alpha: baseAlpha, // Start at base alpha
                 targetAlpha: baseAlpha,
-                baseAlpha: baseAlpha,
-                linkCount: linkCount
+                baseAlpha: baseAlpha
             };
         });
 
@@ -191,7 +190,7 @@ export class GraphSimulator {
                 .scaleExtent([0.1, 4])
                 .on('zoom', (event) => {
                     const { k, x, y } = event.transform;
-                    console.log('[GraphSimulator] Zoom event:', { scale: k, x, y });
+
                     this.currentScale = k;
                     this.renderer.app!.stage.scale.set(k);
                     this.renderer.app!.stage.position.set(x, y);
@@ -277,8 +276,20 @@ export class GraphSimulator {
                     const rect = canvas.getBoundingClientRect();
                     const x = transform.invertX(event.sourceEvent.clientX - rect.left);
                     const y = transform.invertY(event.sourceEvent.clientY - rect.top);
-                    const node = this.simulation?.find(x, y, 30);
-                    if (node) {
+
+                    // 精确检测点击到了哪个节点，与 PixiJS 的 hitArea (max(radius, 5)) 逻辑对齐
+                    const foundNode = this.renderedNodes.find(rn => {
+                        const dx = (rn.data.x ?? 0) - x;
+                        const dy = (rn.data.y ?? 0) - y;
+                        const distSq = dx * dx + dy * dy;
+                        // 这里必须使用与渲染一致的判定半径
+                        const r = getNodeRadius(rn.data, this.simLinks);
+                        const hitRadius = Math.max(r, 5);
+                        return distSq <= hitRadius * hitRadius;
+                    });
+
+                    if (foundNode) {
+                        const node = foundNode.data;
                         node.x = node.x ?? 0;
                         node.y = node.y ?? 0;
                         return node;
@@ -356,45 +367,48 @@ export class GraphSimulator {
 
                 // Get current scale directly from PixiJS stage
                 const scale = this.renderer.app?.stage.scale.x ?? 1;
-                const links = node.linkCount || 0;
+                // 1. 根据权重计算重要性分数 (Significance Score)
+                // 对齐：文章 3 个链接为一个单位，标签 6 个链接为一个单位
+                const weight = node.data.nodeType === 'tag' ? 6 : 3;
+                const significance = (node.linkCount || 0) / weight;
 
-                // 1. Node progressive disclosure (Smoothed Ramps)
+                // 2. Node progressive disclosure (基于重要性分数)
                 if (scale < 0.5) {
                     const t = scale / 0.5;
-                    if (links >= 5) nodeScaleOpacity = 1;
-                    else if (links >= 2) nodeScaleOpacity = 0.2 + t * 0.3; // 0.2 -> 0.5
-                    else nodeScaleOpacity = 0.05 + t * 0.15; // 0.05 -> 0.2
+                    if (significance >= 2) nodeScaleOpacity = 1; // 高权重 (文章6+, 标签12+)
+                    else if (significance >= 0.8) nodeScaleOpacity = 0.2 + t * 0.3; // 中权重
+                    else nodeScaleOpacity = 0.05 + t * 0.15; // 低权重
                 } else if (scale < 1.2) {
                     const t = (scale - 0.5) / 0.7;
-                    if (links >= 2) nodeScaleOpacity = 0.5 + t * 0.5; // 0.5 -> 1.0
-                    else if (links >= 1) nodeScaleOpacity = 0.2 + t * 0.6; // 0.2 -> 0.8
-                    else nodeScaleOpacity = 0.2 + t * 0.3; // 0.2 -> 0.5
+                    if (significance >= 1) nodeScaleOpacity = 0.5 + t * 0.5; // (文章3+, 标签6+)
+                    else if (significance >= 0.3) nodeScaleOpacity = 0.2 + t * 0.6; // (文章1+, 标签2+)
+                    else nodeScaleOpacity = 0.2 + t * 0.3;
                 } else if (scale < 2.0) {
                     const t = (scale - 1.2) / 0.8;
-                    if (links >= 1) nodeScaleOpacity = 0.8 + t * 0.2; // 0.8 -> 1.0
-                    else nodeScaleOpacity = 0.5 + t * 0.5; // 0.5 -> 1.0
+                    if (significance >= 0.3) nodeScaleOpacity = 0.8 + t * 0.2;
+                    else nodeScaleOpacity = 0.5 + t * 0.5;
                 } else {
                     nodeScaleOpacity = 1;
                 }
 
-                // 2. Label progressive disclosure (Stricter, shows all at scale >= 2.5)
+                // 3. Label progressive disclosure (更严格的分层展现)
                 if (scale < 0.6) {
-                    // Show labels ONLY for major hubs
-                    labelScaleOpacity = links >= 8 ? 1 : 0;
+                    // 仅显示核心节点标签 (权重极高)
+                    labelScaleOpacity = significance >= 2.5 ? 1 : 0;
                 } else if (scale < 1.2) {
-                    // Show labels for nodes with >= 3 links, fade in >= 2
-                    if (links >= 3) labelScaleOpacity = 1;
-                    else if (links >= 2) labelScaleOpacity = (scale - 0.6) / 0.6; // 0 to 1
+                    // 显示重点节点标签
+                    if (significance >= 1.5) labelScaleOpacity = 1;
+                    else if (significance >= 1.0) labelScaleOpacity = (scale - 0.6) / 0.6;
                     else labelScaleOpacity = 0;
                 } else if (scale < 1.8) {
-                    // Show labels for nodes with >= 2 links, fade in >= 1
-                    if (links >= 2) labelScaleOpacity = 1;
-                    else if (links >= 1) labelScaleOpacity = (scale - 1.2) / 0.6; // 0 to 1
+                    // 显示所有标准权重及以上的标签
+                    if (significance >= 1.0) labelScaleOpacity = 1;
+                    else if (significance >= 0.3) labelScaleOpacity = (scale - 1.2) / 0.6;
                     else labelScaleOpacity = 0;
                 } else if (scale < 2.5) {
-                    // Show all connected labels, fade in isolated ones
-                    if (links >= 1) labelScaleOpacity = 1;
-                    else labelScaleOpacity = (scale - 1.8) / 0.7; // 0 to 1
+                    // 渐显所有连接节点
+                    if (significance >= 0.1) labelScaleOpacity = 1;
+                    else labelScaleOpacity = (scale - 1.8) / 0.7;
                 } else {
                     labelScaleOpacity = 1;
                 }
