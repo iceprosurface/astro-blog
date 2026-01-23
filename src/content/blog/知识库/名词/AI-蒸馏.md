@@ -9,7 +9,7 @@ tags:
 ccby: true
 draft: false
 comments: true
-no-rss: false
+no-rss: true
 ---
 
 **知识蒸馏**（Knowledge Distillation）是机器学习领域的一种模型压缩（Model Compression）技术，旨在通过监督学习将一个大型、复杂、高性能的**教师模型**（Teacher Model）所习得的知识（Knowledge）提取并迁移到一个较小的、易于部署的**学生模型**（Student Model）中。
