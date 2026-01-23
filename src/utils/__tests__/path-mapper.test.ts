@@ -131,7 +131,7 @@ This is a nested child.`,
 		it('should resolve index page permalink', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const indexPath = path.join(tempContentDir, 'index.md');
-			const permalink = mapper.fileIdToPermalink(indexPath);
+			const permalink = mapper.relativePathToPermalink(indexPath);
 
 			expect(permalink).toBe('/');
 		});
@@ -139,23 +139,23 @@ This is a nested child.`,
 		it('should resolve regular post permalink', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const testPath = path.join(tempContentDir, 'test.md');
-			const permalink = mapper.fileIdToPermalink(testPath);
+			const permalink = mapper.relativePathToPermalink(testPath);
 
-			expect(permalink).toBe('/test');
+			expect(permalink).toBe('/test/');
 		});
 
 		it('should resolve nested page permalink', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const childPath = path.join(tempContentDir, 'nested', 'child.md');
-			const permalink = mapper.fileIdToPermalink(childPath);
+			const permalink = mapper.relativePathToPermalink(childPath);
 
-			expect(permalink).toBe('/nested/child');
+			expect(permalink).toBe('/nested/child/');
 		});
 
 		it('should return null for non-existent file', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const nonExistentPath = path.join(tempContentDir, 'nonexistent.md');
-			const permalink = mapper.fileIdToPermalink(nonExistentPath);
+			const permalink = mapper.relativePathToPermalink(nonExistentPath);
 
 			expect(permalink).toBeNull();
 		});
@@ -164,7 +164,7 @@ This is a nested child.`,
 	describe('File Path Resolution', () => {
 		it('should resolve root file path from permalink', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
-			const filePath = mapper.permalinkToFileId('/');
+			const filePath = mapper.permalinkToRelativePath('/');
 
 			expect(filePath).toBeDefined();
 			expect(filePath).toContain('index.md');
@@ -172,7 +172,7 @@ This is a nested child.`,
 
 		it('should resolve nested file path from permalink', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
-			const filePath = mapper.permalinkToFileId('/test');
+			const filePath = mapper.permalinkToRelativePath('/test');
 
 			expect(filePath).toBeDefined();
 			expect(filePath).toContain('test.md');
@@ -180,7 +180,7 @@ This is a nested child.`,
 
 		it('should return null for non-existent permalink', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
-			const filePath = mapper.permalinkToFileId('/non-existent');
+			const filePath = mapper.permalinkToRelativePath('/non-existent');
 
 			expect(filePath).toBeNull();
 		});
@@ -190,11 +190,11 @@ This is a nested child.`,
 		it('should return metadata for file path', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const testPath = path.join(tempContentDir, 'test.md');
-			const metadata = mapper.getFileMetadata(testPath);
+			const metadata = mapper.getFileMetadataByRelativePath(testPath);
 
 			expect(metadata).toBeDefined();
 			expect(metadata?.title).toBe('Test Post');
-			expect(metadata?.permalink).toBe('/test');
+			expect(metadata?.permalink).toBe('/test/');
 			expect(metadata?.type).toBe('content');
 			expect(metadata?.folderPath).toBe('');
 		});
@@ -202,7 +202,7 @@ This is a nested child.`,
 		it('should return metadata for index file', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const indexPath = path.join(tempContentDir, 'index.md');
-			const metadata = mapper.getFileMetadata(indexPath);
+			const metadata = mapper.getFileMetadataByRelativePath(indexPath);
 
 			expect(metadata).toBeDefined();
 			expect(metadata?.title).toBe('Test Index');
@@ -214,11 +214,11 @@ This is a nested child.`,
 		it('should return metadata for nested index file', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const indexPath = path.join(tempContentDir, 'nested', 'index.md');
-			const metadata = mapper.getFileMetadata(indexPath);
+			const metadata = mapper.getFileMetadataByRelativePath(indexPath);
 
 			expect(metadata).toBeDefined();
 			expect(metadata?.title).toBe('Nested Index');
-			expect(metadata?.permalink).toBe('/nested');
+			expect(metadata?.permalink).toBe('/nested/');
 			expect(metadata?.type).toBe('index');
 			expect(metadata?.folderPath).toBe('nested');
 		});
@@ -229,13 +229,13 @@ This is a nested child.`,
 
 			expect(metadata).toBeDefined();
 			expect(metadata?.title).toBe('Test Post');
-			expect(metadata?.permalink).toBe('/test');
+			expect(metadata?.permalink).toBe('/test/');
 		});
 
 		it('should return null for non-existent file path', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const nonExistentPath = path.join(tempContentDir, 'nonexistent.md');
-			const metadata = mapper.getFileMetadata(nonExistentPath);
+			const metadata = mapper.getFileMetadataByRelativePath(nonExistentPath);
 
 			expect(metadata).toBeNull();
 		});
@@ -278,7 +278,7 @@ This is a nested child.`,
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const folderMeta = mapper.getFolderMetadata('nested');
 
-			expect(folderMeta?.permalink).toBe('/nested');
+			expect(folderMeta?.permalink).toBe('/nested/');
 			expect(folderMeta?.title).toBe('Nested Index');
 		});
 	});
@@ -318,7 +318,7 @@ This is a nested child.`,
 		it('should treat index.md folderPath as parent folder path', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const indexPath = path.join(tempContentDir, 'index.md');
-			const metadata = mapper.getFileMetadata(indexPath);
+			const metadata = mapper.getFileMetadataByRelativePath(indexPath);
 
 			// index.md should have folderPath as empty string for root
 			expect(metadata?.folderPath).toBe('');
@@ -327,7 +327,7 @@ This is a nested child.`,
 		it('should treat nested index.md folderPath correctly', async () => {
 			const mapper = await PathMapper.getInstance({ contentDir: tempContentDir });
 			const indexPath = path.join(tempContentDir, 'nested', 'index.md');
-			const metadata = mapper.getFileMetadata(indexPath);
+			const metadata = mapper.getFileMetadataByRelativePath(indexPath);
 
 			// nested index.md should have folderPath as 'nested' (without /index.md)
 			expect(metadata?.folderPath).toBe('nested');
@@ -345,7 +345,7 @@ This is a nested child.`,
 				expect(permalink).not.toBeNull();
 				expect(permalink).toBe(file.permalink);
 
-				const reversedPath = mapper.permalinkToRelativePath(permalink);
+				const reversedPath = mapper.permalinkToRelativePath(permalink!);
 				expect(reversedPath).toBe(file.relativePath);
 			}
 		});
