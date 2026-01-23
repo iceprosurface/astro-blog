@@ -51,7 +51,7 @@ export function GraphControlPanel() {
                     </div>
                     <input
                         type="range"
-                        min="0.1" max="4.0" step="0.1"
+                        min="1" max="50" step="1"
                         value={repelForce}
                         onChange={(e) => setPref({ repelForce: parseFloat(e.target.value) })}
                     />

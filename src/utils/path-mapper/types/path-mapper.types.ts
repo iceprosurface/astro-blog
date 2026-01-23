@@ -130,6 +130,12 @@ export interface FileMetadata {
 
 	/** 文章标签列表 */
 	tags: string[];
+
+	/** 原始文件路径（Astro collection id，未标准化） */
+	originalPath: string;
+
+	/** 原始文件夹路径（未标准化） */
+	originalFolderPath: string;
 }
 
 /**

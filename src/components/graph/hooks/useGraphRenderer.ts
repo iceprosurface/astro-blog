@@ -16,6 +16,7 @@ export function useGraphRenderer(
     const rendererRef = useRef<PixiRenderer | null>(null);
     const simulatorRef = useRef<GraphSimulator | null>(null);
     const [isReady, setIsReady] = useState(false);
+    const [isLoading, setIsLoading] = useState(true);
 
     // 1. Initialize Renderer (Canvas)
     useEffect(() => {
@@ -78,7 +79,14 @@ export function useGraphRenderer(
         const width = renderer.app.screen.width;
         const height = renderer.app.screen.height;
 
+        let active = true;
+        setIsLoading(true);
+
         simulatorRef.current.init(nodes, links, width, height, viewMode);
+
+        if (active) setIsLoading(false);
+
+        return () => { active = false; };
 
     }, [isReady, rendererRef.current, nodes, links, theme, centerId, viewMode]);
 
@@ -89,4 +97,5 @@ export function useGraphRenderer(
         }
     }, [config.repelForce, config.centerForce, config.linkDistance, config.focusOnHover, config.drag, config.zoom, config.fontSize]);
 
+    return { isReady, isLoading };
 }

@@ -17,6 +17,8 @@ export const GET: APIRoute = async () => {
     const allFiles = mapper.getAllFiles()
     console.log('[Graph API] Got', allFiles.length, 'files')
 
+
+
     const nodes: Array<{
       id: string
       text: string

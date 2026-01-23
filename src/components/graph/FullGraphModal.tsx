@@ -55,7 +55,7 @@ export function FullGraphModal({ isOpen, onClose, currentPermalink, graphData }:
         return () => document.removeEventListener('keydown', handleEscape);
     }, [isOpen, onClose]);
 
-    useGraphRenderer(
+    const { isLoading } = useGraphRenderer(
         isOpen ? container : null,
         filteredData.nodes,
         filteredData.links,
@@ -82,6 +82,7 @@ export function FullGraphModal({ isOpen, onClose, currentPermalink, graphData }:
                 </div>
 
                 <div className="modal-body-full">
+                    {isLoading && <div className="loading-spinner"></div>}
                     <div ref={setContainer} className="full-graph-container"></div>
                 </div>
             </div>

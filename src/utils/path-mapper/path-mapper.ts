@@ -38,6 +38,9 @@ export class PathMapper {
 	// 相对路径 -> 文件夹元数据
 	private relativePathToFolderMeta: Map<RelativePath, FolderMetadata> = new Map();
 
+	// 原始路径 -> 文件元数据 (Supports lookup by original file path)
+	private originalPathToMetadata: Map<string, FileMetadata> = new Map();
+
 	// ==================== Permalink 映射 ====================
 
 	private _permalinkToRelativePath: Map<Permalink, RelativePath> = new Map();
@@ -439,6 +442,13 @@ export class PathMapper {
 
 			const isIndex = fileName === 'index.md' || fileName === 'index.mdx';
 
+			// 原始路径及文件夹
+			// 优先使用 filePath (如果存在，用户提示新版 Astro 可能带这个属性)，否则使用 id
+			// post.id 本身就是 content collection 的相对路径
+			const originalPath = (post as any).filePath || post.id;
+			const originalFileName = originalPath.split('/').pop() || '';
+			const originalFolderPath = originalPath.slice(0, -originalFileName.length).replace(/\/$/, '');
+
 			// 构建文件元数据
 			const metadata: FileMetadata = {
 				fileId: relativePath,  // 现在 fileId 就是 relativePath
@@ -451,10 +461,13 @@ export class PathMapper {
 				forwardLinks: [],
 				backwardLinks: [],
 				tags: post.data.tags || [],
+				originalPath,
+				originalFolderPath,
 			};
 
 			// 添加到核心索引
 			this.relativePathToMetadata.set(relativePath, metadata);
+			this.originalPathToMetadata.set(originalPath, metadata);
 
 			// 检查重复 permalink（首次写入赢）
 			if (this._permalinkToRelativePath.has(normalizedPermalink)) {
@@ -673,7 +686,7 @@ export class PathMapper {
 				const tree = parser.parse(post.body || '');
 
 				// 提取链接
-				this.extractLinks(tree, folderPath, links);
+				this.extractLinks(tree, metadata, links);
 			} catch (error) {
 				console.error(`Failed to parse links for ${relativePath}:`, error);
 			}
@@ -710,7 +723,7 @@ export class PathMapper {
 	/**
 	 * 从 markdown AST 中提取内部链接
 	 */
-	private extractLinks(node: any, currentFolderPath: string, links: Set<Permalink>): void {
+	private extractLinks(node: any, currentFile: FileMetadata, links: Set<Permalink>): void {
 		if (!node) return;
 
 		// 处理链接节点
@@ -723,7 +736,7 @@ export class PathMapper {
 			}
 
 			// 解析链接
-			const targetPermalink = this.resolveLinkPath(url, currentFolderPath);
+			const targetPermalink = this.resolveLinkPath(url, currentFile);
 
 			if (targetPermalink) {
 				links.add(targetPermalink);
@@ -733,7 +746,7 @@ export class PathMapper {
 		// 递归处理子节点
 		if (node.children && Array.isArray(node.children)) {
 			for (const child of node.children) {
-				this.extractLinks(child, currentFolderPath, links);
+				this.extractLinks(child, currentFile, links);
 			}
 		}
 	}
@@ -741,59 +754,95 @@ export class PathMapper {
 	/**
 	 * 解析链接路径（与 rehype-resolve-internal-links 中的逻辑一致）
 	 */
-	private resolveLinkPath(linkPath: string, currentFolderPath: string): Permalink | null {
-		let normalizedLink = linkPath;
+	private resolveLinkPath(linkPath: string, currentFile: FileMetadata): Permalink | null {
+		// 1. 尝试作为 permalink 直接查找 (最快)
+		const asPermalink = this.getFileMetadataByPermalink(linkPath);
+		if (asPermalink?.permalink) return asPermalink.permalink;
 
-		// 移除文件扩展名
-		normalizedLink = normalizedLink.replace(/\.(md|mdx)$/, '');
-
-		// 处理绝对路径（以 / 开头）
-		if (linkPath.startsWith('/')) {
-			normalizedLink = linkPath.slice(1);
+		// 2. 清理链接路径
+		let cleanLink = linkPath.replace(/\.(md|mdx)$/, '');
+		try {
+			cleanLink = decodeURI(cleanLink);
+		} catch (e) {
+			// ignore
 		}
 
-		const segments = normalizedLink.split('/').filter((s) => s.length > 0 && s !== '.');
+		// 3. 确定基准路径（从哪里开始找）
+		let targetPath: string;
 
-		let startingFolderPath = currentFolderPath;
-
-		if (linkPath.startsWith('/')) {
-			startingFolderPath = '';
+		if (cleanLink.startsWith('/')) {
+			// 绝对路径：相对于 content/blog 根目录
+			targetPath = cleanLink.slice(1);
 		} else {
-			// 处理 ..
-			let tempSegments = startingFolderPath ? startingFolderPath.split('/').filter(Boolean) : [];
-			for (const seg of segments) {
+			// 相对路径：相对于当前文件所在文件夹
+			// 使用 originalFolderPath 以支持准确的文件查找
+			const base = currentFile.originalFolderPath;
+
+			// 简单的路径拼接和归一化
+			const parts = base ? base.split('/') : [];
+			const segs = cleanLink.split('/');
+
+			for (const seg of segs) {
+				if (seg === '.') continue;
 				if (seg === '..') {
-					if (tempSegments.length > 0) {
-						tempSegments.pop();
-					} else {
-						// 路径穿越到根目录之外，拒绝
-						return null;
-					}
+					if (parts.length > 0) parts.pop();
 				} else {
-					break;
+					parts.push(seg);
 				}
 			}
-			startingFolderPath = tempSegments.join('/');
+			targetPath = parts.join('/');
 		}
 
-		// 构建目标路径
-		let targetRelativePath = startingFolderPath;
-		for (const seg of segments) {
-			if (seg === '..' || seg === '.') continue;
+		// 4. 尝试查找目标文件
 
-			if (targetRelativePath) {
-				targetRelativePath += '/' + seg;
-			} else {
-				targetRelativePath = seg;
-			}
+		// 4.1 尝试通过 originalPath 查找 (精确匹配)
+		// 假设 targetPath 可能是文件名，尝试追加扩展名
+		// 注意：这里 targetPath 是不带扩展名的，而 originalPath 是带扩展名的
+		// 我们的策略是：构建可能的 originalPath 并查找
+
+		// 尝试直接匹配（如果链接里带了扩展名，虽然前面 replace 掉了，但我们可以试一试 normalized）
+		// 但更可靠的是遍历查找？不，那是O(n).
+		// 我们有 originalPathToMetadata，key 是 full original path (e.g. "Folder/File.md")
+
+		// 尝试构建可能的 keys
+		const candidates = [
+			targetPath,
+			`${targetPath}.md`,
+			`${targetPath}.mdx`,
+			`${targetPath}/index.md`,
+			`${targetPath}/index.mdx`
+		];
+
+		for (const candidate of candidates) {
+			const meta = this.originalPathToMetadata.get(candidate);
+			if (meta?.permalink) return meta.permalink;
 		}
 
-		// 查找目标文件
-		const targetMeta = this.findByRelativePath(targetRelativePath);
-
+		// 4.2 如果 failed，回退到原来的 normalizeRelativePath 查找机制
+		// 这可以处理大小写不匹配等情况 (PathMapper.normalizeRelativePath 会转小写)
+		const targetMeta = this.findByRelativePath(targetPath);
 		if (targetMeta && 'permalink' in targetMeta && targetMeta.permalink) {
 			return targetMeta.permalink;
 		}
+
+		// 4.3 最后尝试作为 permalink 查找 (fallback)
+		// e.g. ../mcbbs-closure-loss -> /mcbbs-closure-loss
+		// 这里的 targetPath 是解析后的 full path (e.g. "杂记/mcbbs-closure-loss")
+		// 但如果是 permalink 引用，用户写的可能是 relative permalink?
+		// 假设 ../mcbbs-closure-loss 在 /bar/baz 页面
+		// 这可能意味着 /bar/foo
+
+		// 之前的 fallback 逻辑比较简单粗暴，直接查 relative path
+		// 我们保留之前的 fallback 逻辑
+		const possiblePermalink = linkPath.startsWith('/') ? linkPath : '/' + linkPath;
+		// 注意：这里的 context 是 permalink space，而不是 file path space
+		// 如果用户写 [link](../foo)，在 /bar/baz 页面
+		// 这可能意味着 /bar/foo
+
+		// 之前的 fallback 逻辑比较简单粗暴，直接查 relative path
+		// 我们保留之前的 fallback 逻辑
+		const simpleMeta = this.getFileMetadataByPermalink(possiblePermalink);
+		if (simpleMeta) return simpleMeta.permalink;
 
 		return null;
 	}

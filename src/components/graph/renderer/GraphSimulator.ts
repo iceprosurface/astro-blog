@@ -19,8 +19,13 @@ export class GraphSimulator {
     private hasDragged: boolean = false;
     private pendingHoverId: string | null = null;
     private hoveredNodeId: string | null = null;
+    private hoverIntensity: number = 0; // 0 to 1, smoothed
     private ticker: ((delta: any) => void) | null = null;
     private viewMode: 'focus' | 'full' = 'focus';
+    // Use any[] to handle d3's mutation of source/target from string ID to Node object
+    private simLinks: any[] = [];
+    private currentScale: number = 1;
+    private frameCounter: number = 0;
 
     constructor(
         renderer: PixiRenderer,
@@ -43,38 +48,74 @@ export class GraphSimulator {
         this.renderer.labelContainer!.removeChildren();
 
         // Setup Simulation
+        // Clone data to avoid shared state issues between instances (Sidebar vs Full)
+        const simNodes = nodes.map(n => ({ ...n }));
+        this.simLinks = links.map(l => ({
+            ...l,
+            source: typeof l.source === 'object' ? (l.source as any).id : l.source,
+            target: typeof l.target === 'object' ? (l.target as any).id : l.target
+        }));
+
+        // Initial Layout: Spiral / Phyllotaxis to prevent explosion
+        // This spreads nodes out initially so they don't start at (0,0) and repel violently
+        simNodes.forEach((node, i) => {
+            const n = node as any;
+            if (n.id === this.centerId) {
+                n.x = width / 2;
+                n.y = height / 2;
+                return;
+            }
+            // Spiral arrangement
+            const angle = i * 0.5; // Arbitrary angle increment
+            const radius = 30 + 10 * i; // Increasing radius
+            // Randomize slightly to avoid perfect lines
+            n.x = width / 2 + radius * Math.cos(angle);
+            n.y = height / 2 + radius * Math.sin(angle);
+        });
+
         // Pre-calculate connected nodes for performance
         const connectedNodeIds = new Set<string>();
-        links.forEach(l => {
-            const sid = typeof l.source === 'object' ? l.source.id : l.source as string;
-            const tid = typeof l.target === 'object' ? l.target.id : l.target as string;
+        this.simLinks.forEach(l => {
+            // source/target are strings now after cloning
+            const sid = l.source as string;
+            const tid = l.target as string;
             connectedNodeIds.add(sid);
             connectedNodeIds.add(tid);
         });
 
         // Setup Simulation
-        this.simulation = d3.forceSimulation<NodeData, LinkData>(nodes)
+        this.simulation = d3.forceSimulation<NodeData, LinkData>(simNodes)
             .force("charge", d3.forceManyBody().strength((n: any) => {
                 const isConnected = connectedNodeIds.has(n.id);
-                return isConnected ? -30 * this.config.repelForce : -1 * this.config.repelForce;
+                return isConnected ? -15 * this.config.repelForce : -5 * this.config.repelForce;
             }))
             .force("center", d3.forceCenter(width / 2, height / 2).strength(this.config.centerForce))
-            .force("x", d3.forceX(width / 2).strength(0.02))
-            .force("y", d3.forceY(height / 2).strength(0.02))
-            .force("link", d3.forceLink<NodeData, LinkData>(links).id(d => d.id).distance(this.config.linkDistance))
+            .force("x", d3.forceX(width / 2).strength(0.05))
+            .force("y", d3.forceY(height / 2).strength(0.05))
+            .force("link", d3.forceLink<NodeData, LinkData>(this.simLinks).id(d => d.id).distance(this.config.linkDistance).strength(0.2))
             .force("collide", d3.forceCollide<NodeData>((n) => {
                 const r = getNodeRadius(n, links);
                 // Estimate text radius (half width) to prevent overlapping titles
                 // Assumes average char width is roughly 0.6 * fontSize
                 const textWidth = (n.text?.length || 0) * this.config.fontSize * 0.6;
                 // Use a hybrid radius: we don't want it FULL width (too sparse), but enough to reduce clash
-                return Math.max(r * 1.5, textWidth / 2.2);
-            }).iterations(3));
+                return Math.max(r * 1.2, textWidth / 4);
+            }).iterations(2))
+            .velocityDecay(0.6)
+            .alphaMin(0.05)
+            .alphaDecay(0.03);
 
-        this.simulation.stop(); // Stop internal timer
+        // Fix the center node to the screen center initially
+        const centerNode = simNodes.find(n => n.id === this.centerId) as any;
+        if (centerNode) {
+            centerNode.fx = width / 2;
+            centerNode.fy = height / 2;
+            centerNode.x = width / 2;
+            centerNode.y = height / 2;
+        }
 
         // Create Render Objects
-        this.renderedLinks = links.map(link => {
+        this.renderedLinks = this.simLinks.map(link => {
             const graphics = new Graphics();
             this.renderer.linkContainer!.addChild(graphics);
 
@@ -98,7 +139,7 @@ export class GraphSimulator {
             };
         });
 
-        this.renderedNodes = nodes.map(node => {
+        this.renderedNodes = simNodes.map(node => {
             const radius = getNodeRadius(node, links);
             const color = node.nodeType === 'tag' ? this.theme.nodeTag : (node.isCurrent ? this.theme.nodeCurrent : (node.isVisited ? this.theme.nodeVisited : this.theme.nodeDefault));
             const rendered = createRenderedNode(node, radius, color, this.theme, { fontSize: this.config.fontSize });
@@ -123,11 +164,19 @@ export class GraphSimulator {
                 baseAlpha = calculateNodeAlpha(dist);
             }
 
+            // Calculate link count for progressive disclosure
+            const linkCount = this.simLinks.filter((l: any) => {
+                const s = typeof l.source === "object" ? l.source.id : l.source;
+                const t = typeof l.target === "object" ? l.target.id : l.target;
+                return s === node.id || t === node.id;
+            }).length;
+
             return {
                 ...rendered,
                 alpha: baseAlpha, // Start at base alpha
                 targetAlpha: baseAlpha,
-                baseAlpha: baseAlpha
+                baseAlpha: baseAlpha,
+                linkCount: linkCount
             };
         });
 
@@ -142,10 +191,15 @@ export class GraphSimulator {
                 .scaleExtent([0.1, 4])
                 .on('zoom', (event) => {
                     const { k, x, y } = event.transform;
+                    console.log('[GraphSimulator] Zoom event:', { scale: k, x, y });
+                    this.currentScale = k;
                     this.renderer.app!.stage.scale.set(k);
                     this.renderer.app!.stage.position.set(x, y);
                 });
             d3.select(this.renderer.app!.canvas).call(zoom);
+            // Get initial scale from current transform
+            const initialTransform = d3.zoomTransform(this.renderer.app!.canvas);
+            this.currentScale = initialTransform.k;
         }
 
         // Setup Ticker
@@ -164,7 +218,11 @@ export class GraphSimulator {
         if (!this.simulation || !this.renderer.app) return;
 
         const connectedNodeIds = new Set<string>();
-        currentLinks.forEach(l => {
+        // Use internally managed simLinks instead of external currentLinks
+        // to ensure compatibility with simNodes in the simulation
+        const linksToUse = this.simLinks.length > 0 ? this.simLinks : currentLinks;
+
+        linksToUse.forEach(l => {
             const sid = typeof l.source === 'object' ? l.source.id : l.source as string;
             const tid = typeof l.target === 'object' ? l.target.id : l.target as string;
             connectedNodeIds.add(sid);
@@ -173,12 +231,12 @@ export class GraphSimulator {
 
         this.simulation.force("charge", d3.forceManyBody().strength((n: any) => {
             const isConnected = connectedNodeIds.has(n.id);
-            return isConnected ? -30 * this.config.repelForce : -1 * this.config.repelForce;
+            return isConnected ? -15 * this.config.repelForce : -5 * this.config.repelForce;
         }));
         this.simulation.force("center", d3.forceCenter(this.renderer.app.screen.width / 2, this.renderer.app.screen.height / 2).strength(this.config.centerForce));
-        this.simulation.force("x", d3.forceX(this.renderer.app.screen.width / 2).strength(0.02));
-        this.simulation.force("y", d3.forceY(this.renderer.app.screen.height / 2).strength(0.02));
-        this.simulation.force("link", d3.forceLink<NodeData, LinkData>(currentLinks).id(d => d.id).distance(this.config.linkDistance));
+        this.simulation.force("x", d3.forceX(this.renderer.app.screen.width / 2).strength(0.05));
+        this.simulation.force("y", d3.forceY(this.renderer.app.screen.height / 2).strength(0.05));
+        this.simulation.force("link", d3.forceLink<NodeData, LinkData>(linksToUse).id(d => d.id).distance(this.config.linkDistance).strength(0.2));
         this.simulation.alpha(0.3).restart();
     }
 
@@ -189,6 +247,14 @@ export class GraphSimulator {
                 centerForce.x(width / 2);
                 centerForce.y(height / 2);
             }
+
+            // Also update the fixed position of the center node if it's still pinned
+            const centerNode = this.simulation.nodes().find((n: NodeData) => n.id === this.centerId) as any;
+            if (centerNode && centerNode.fx !== null && centerNode.fx !== undefined) {
+                centerNode.fx = width / 2;
+                centerNode.fy = height / 2;
+            }
+
             this.simulation.alpha(0.3).restart();
         }
     }
@@ -222,7 +288,8 @@ export class GraphSimulator {
                 .on("start", (event) => {
                     this.isDragging = true;
                     this.hasDragged = false;
-                    if (!event.active) this.simulation?.alphaTarget(0.3);
+                    this.updateHoverState(event.subject.id);
+                    if (!event.active) this.simulation?.alphaTarget(0.3).restart();
                     const transform = d3.zoomTransform(canvas);
                     const rect = canvas.getBoundingClientRect();
                     const startX = transform.invertX(event.sourceEvent.clientX - rect.left);
@@ -242,6 +309,7 @@ export class GraphSimulator {
                 .on("end", (event) => {
                     if (!event.active) this.simulation?.alphaTarget(0);
                     this.isDragging = false;
+                    this.updateHoverState(null);
                     if (this.pendingHoverId !== this.hoveredNodeId) {
                         this.updateHoverState(this.pendingHoverId);
                     }
@@ -255,6 +323,8 @@ export class GraphSimulator {
     private tick(delta: any) {
         this.simulation?.tick();
 
+        if (!this.renderer.app) return;
+
         this.renderedLinks.forEach(link => {
             link.alpha += (link.targetAlpha - link.alpha) * 0.1;
             renderLink(link.graphics, link.data.source, link.data.target, {
@@ -264,14 +334,89 @@ export class GraphSimulator {
             });
         });
 
+        const centerX = this.renderer.app.screen.width / 2;
+        const centerY = this.renderer.app.screen.height / 2;
+        const fadeRadius = 600; // Radius where fade starts to drop off
+
+        // Global hover intensity interpolation (0 = no hover, 1 = hovering something)
+        const targetHoverIntensity = this.hoveredNodeId !== null ? 1 : 0;
+        this.hoverIntensity += (targetHoverIntensity - this.hoverIntensity) * 0.15;
+
         this.renderedNodes.forEach(node => {
             node.alpha += (node.targetAlpha - node.alpha) * 0.1;
             const { x, y } = node.data;
             if (x != null && y != null) {
                 node.graphics.position.set(x, y);
                 node.label.position.set(x, y);
-                node.graphics.alpha = node.alpha;
-                node.label.alpha = node.alpha;
+
+
+                // Calculate separate scale-based opacities for node and label
+                let nodeScaleOpacity = 1;
+                let labelScaleOpacity = 1;
+
+                // Get current scale directly from PixiJS stage
+                const scale = this.renderer.app?.stage.scale.x ?? 1;
+                const links = node.linkCount || 0;
+
+                // 1. Node progressive disclosure (Smoothed Ramps)
+                if (scale < 0.5) {
+                    const t = scale / 0.5;
+                    if (links >= 5) nodeScaleOpacity = 1;
+                    else if (links >= 2) nodeScaleOpacity = 0.2 + t * 0.3; // 0.2 -> 0.5
+                    else nodeScaleOpacity = 0.05 + t * 0.15; // 0.05 -> 0.2
+                } else if (scale < 1.2) {
+                    const t = (scale - 0.5) / 0.7;
+                    if (links >= 2) nodeScaleOpacity = 0.5 + t * 0.5; // 0.5 -> 1.0
+                    else if (links >= 1) nodeScaleOpacity = 0.2 + t * 0.6; // 0.2 -> 0.8
+                    else nodeScaleOpacity = 0.2 + t * 0.3; // 0.2 -> 0.5
+                } else if (scale < 2.0) {
+                    const t = (scale - 1.2) / 0.8;
+                    if (links >= 1) nodeScaleOpacity = 0.8 + t * 0.2; // 0.8 -> 1.0
+                    else nodeScaleOpacity = 0.5 + t * 0.5; // 0.5 -> 1.0
+                } else {
+                    nodeScaleOpacity = 1;
+                }
+
+                // 2. Label progressive disclosure (Stricter, shows all at scale >= 2.5)
+                if (scale < 0.6) {
+                    // Show labels ONLY for major hubs
+                    labelScaleOpacity = links >= 8 ? 1 : 0;
+                } else if (scale < 1.2) {
+                    // Show labels for nodes with >= 3 links, fade in >= 2
+                    if (links >= 3) labelScaleOpacity = 1;
+                    else if (links >= 2) labelScaleOpacity = (scale - 0.6) / 0.6; // 0 to 1
+                    else labelScaleOpacity = 0;
+                } else if (scale < 1.8) {
+                    // Show labels for nodes with >= 2 links, fade in >= 1
+                    if (links >= 2) labelScaleOpacity = 1;
+                    else if (links >= 1) labelScaleOpacity = (scale - 1.2) / 0.6; // 0 to 1
+                    else labelScaleOpacity = 0;
+                } else if (scale < 2.5) {
+                    // Show all connected labels, fade in isolated ones
+                    if (links >= 1) labelScaleOpacity = 1;
+                    else labelScaleOpacity = (scale - 1.8) / 0.7; // 0 to 1
+                } else {
+                    labelScaleOpacity = 1;
+                }
+
+                // 3. Smooth Highlight Logic (Avoid pops/flashes)
+                // focusLevel represents how much this node is highlighted due to hover.
+                // We multiply by this.hoverIntensity to ensure focusLevel is 0 when not hovering,
+                // allowing default zoom-based hiding to work.
+                const focusProgress = Math.max(0, Math.min(1, (node.alpha - 0.05) / 0.95));
+                const focusLevel = this.hoverIntensity * focusProgress;
+
+                // Mix scale-based disclosure with focus-state (1.0)
+                const effectiveNodeScaleOpacity = nodeScaleOpacity + (1 - nodeScaleOpacity) * focusLevel;
+                const effectiveLabelScaleOpacity = labelScaleOpacity + (1 - labelScaleOpacity) * focusLevel;
+
+                const finalNodeOpacity = node.alpha * effectiveNodeScaleOpacity;
+                const finalLabelOpacity = node.alpha * effectiveLabelScaleOpacity;
+
+                node.graphics.alpha = finalNodeOpacity;
+                node.label.alpha = finalLabelOpacity;
+                node.label.visible = finalLabelOpacity > 0.005;
+                node.label.tint = 0xFFFFFF;
             }
         });
     }
@@ -280,7 +425,8 @@ export class GraphSimulator {
         this.hoveredNodeId = newHoverId;
         this.pendingHoverId = newHoverId;
 
-        if (!this.config.focusOnHover || this.isDragging) return;
+        // Allow updateHoverState to run even if isDragging is true, if called internally from drag handlers
+        if (!this.config.focusOnHover && !this.isDragging) return;
 
         const focusNode = newHoverId ?? this.centerId;
         const isHovering = !!newHoverId;
@@ -296,36 +442,6 @@ export class GraphSimulator {
             return;
         }
 
-        // If hovering, we still need to check connectivity, but that's cheaper
-        // (O(E) linear scan, no recursion)
-
-        // Need to construct adjacency set or just filter (filter is O(E) per node, actually O(V*E) total if we do nested... wait)
-
-        // The original logic:
-        // this.renderedLinks.forEach(link => {
-        //     const sourceId = typeof link.data.source === 'object' ? link.data.source.id : link.data.source;
-        //     const targetId = typeof link.data.target === 'object' ? link.data.target.id : link.data.target;
-        //     const isConnected = sourceId === focusNode || targetId === focusNode;
-
-        //     link.targetAlpha = isConnected ? 1 : 0.1;
-        // });
-
-        // this.renderedNodes.forEach(node => {
-        //      // For nodes, we check if they are neighbors of focusNode
-        //      // We can leverage the links loop result implicitly or do another loop
-
-        //      // To be efficient:
-        //      // 1. Collect neighbors of focusNode
-        //      // 2. Set alpha
-
-        //      // But following original logic:
-        //      // It iterates all links per node... O(V*E). Bad.
-        //      // We should optimize this too.
-
-        //      // Optimized approach:
-        //      // Build set of neighbor IDs first.
-        // });
-
         const neighborIds = new Set<string>();
         neighborIds.add(focusNode);
 
@@ -337,11 +453,11 @@ export class GraphSimulator {
             if (t === focusNode) neighborIds.add(s);
 
             const isConnected = s === focusNode || t === focusNode;
-            link.targetAlpha = isConnected ? 1 : 0.1;
+            link.targetAlpha = isConnected ? 1 : 0.05;
         });
 
         this.renderedNodes.forEach(node => {
-            node.targetAlpha = neighborIds.has(node.data.id) ? 1 : 0.1;
+            node.targetAlpha = neighborIds.has(node.data.id) ? 1 : 0.05;
         });
     }
 }

@@ -30,6 +30,7 @@ export interface RenderedNode {
     alpha: number;
     targetAlpha: number;
     baseAlpha: number; // Optimization: pre-calculated alpha based on center distance
+    linkCount: number; // Number of connections, for progressive disclosure
 }
 
 export interface RenderedLink {

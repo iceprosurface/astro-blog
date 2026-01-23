@@ -110,7 +110,31 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    color: var(--graph-label);
+    width: 40px;
+    height: 40px;
+    z-index: 1000;
+}
+
+.loading-spinner::after {
+    content: " ";
+    display: block;
+    width: 32px;
+    height: 32px;
+    margin: 4px;
+    border-radius: 50%;
+    border: 3px solid var(--graph-node-current);
+    border-color: var(--graph-node-current) transparent var(--graph-node-current) transparent;
+    animation: spinner-ring 1.2s linear infinite;
+}
+
+@keyframes spinner-ring {
+    0% {
+        transform: rotate(0deg);
+    }
+
+    100% {
+        transform: rotate(360deg);
+    }
 }
 
 /* Toolbar & Panel */
