@@ -87,8 +87,9 @@
     });
 
     // Determine theme (dark or light)
-    const isDark = document.documentElement.classList.contains("dark") ||
-                   document.documentElement.getAttribute("saved-theme") === "dark";
+    const isDark =
+      document.documentElement.classList.contains("dark") ||
+      document.documentElement.getAttribute("saved-theme") === "dark";
     const themeQuery = isDark ? "?theme=dark" : "?theme=light";
 
     // Fetch preview page
@@ -96,7 +97,8 @@
 
     fetch(previewUrl)
       .then((response) => {
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+        if (!response.ok)
+          throw new Error(`HTTP error! status: ${response.status}`);
         return response.text();
       })
       .then((html) => {
@@ -142,7 +144,7 @@
 
   function init() {
     // Check if device supports hover (desktop) - disable on mobile/touch devices
-    const supportsHover = window.matchMedia('(hover: hover)').matches;
+    const supportsHover = window.matchMedia("(hover: hover)").matches;
     if (!supportsHover) {
       return; // Skip hover behavior on mobile devices
     }
@@ -165,7 +167,18 @@
           link.classList.contains("internal") ||
           (href && href.startsWith("/") && !href.startsWith("//"));
 
-        if (!isInternal || href === "/" || href === window.location.pathname) {
+        // Normalize both for comparison
+        const normalizedHref = href.endsWith("/") ? href : `${href}/`;
+        const normalizedPath = window.location.pathname.endsWith("/")
+          ? window.location.pathname
+          : `${window.location.pathname}/`;
+
+        if (
+          !isInternal ||
+          normalizedHref === "/" ||
+          normalizedHref === normalizedPath ||
+          normalizedHref.startsWith("/folder/")
+        ) {
           return;
         }
 

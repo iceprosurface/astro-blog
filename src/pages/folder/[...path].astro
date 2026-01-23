@@ -92,7 +92,7 @@ if (folderPathDecoded) {
 			? ""
 			: currentFolderMeta?.permalink
 				? currentFolderMeta.permalink
-				: `/folder/${encodeURIComponent(accumulatedPath)}`;
+				: `/folder/${encodeURIComponent(accumulatedPath)}/`;
 
 		breadcrumbItems.push({
 			label: currentFolderMeta?.title || segment,
@@ -122,11 +122,11 @@ if (folderPathDecoded) {
 		normalizedPath.lastIndexOf("/"),
 	);
 
-	let parentLink = "/folder"; // Default to root folder view
+	let parentLink = "/folder/"; // Default to root folder view
 	if (parentPath) {
 		// If parent is not root, finding its link
 		const parentMeta = mapper.getFolderMetadata(parentPath);
-		parentLink = parentMeta?.permalink || `/folder/${parentPath}`;
+		parentLink = parentMeta?.permalink || `/folder/${parentPath}/`;
 	}
 
 	unifiedItems.push({
@@ -148,7 +148,7 @@ if (subfolders && subfolders.length > 0) {
 
 		const subfolderMeta = mapper.getFolderMetadata(normalizedPath);
 		const folderLink =
-			subfolderMeta?.permalink || `/folder/${normalizedPath}`;
+			subfolderMeta?.permalink || `/folder/${normalizedPath}/`;
 
 		unifiedItems.push({
 			type: "folder",

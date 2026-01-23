@@ -181,7 +181,7 @@ export class PathMapper {
 					foundLabel = indexMeta.title;
 				} else {
 					// Fallback 2: 都没有则指向 folder 页面
-					foundLink = `/folder/${accumulated}`;
+					foundLink = `/folder/${accumulated}/`;
 					foundLabel = segment;
 				}
 			}

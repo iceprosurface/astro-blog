@@ -153,10 +153,39 @@ function resolveLinkPath(
     }
 
     // 查找目标文件
-    const targetMeta = mapper.findByRelativePath(targetRelativePath);
+    let targetMeta = mapper.findByRelativePath(targetRelativePath);
 
-    if (targetMeta && 'permalink' in targetMeta && targetMeta.permalink) {
-        return targetMeta.permalink;
+    // Fallback: 如果直接找文件没找到，尝试处理 index 文件的情况
+    if (!targetMeta) {
+        let folderPath: string | null = null;
+        if (targetRelativePath === 'index') {
+            folderPath = '';
+        } else if (targetRelativePath.endsWith('/index')) {
+            folderPath = targetRelativePath.slice(0, -6); // remove '/index'
+        }
+
+        if (folderPath !== null) {
+            targetMeta = mapper.getFolderMetadataFromRelativePath(folderPath);
+        }
+    }
+
+    // Fallback 2: 直接尝试将其视为文件夹
+    if (!targetMeta) {
+        targetMeta = mapper.getFolderMetadataFromRelativePath(targetRelativePath);
+    }
+
+    if (targetMeta) {
+        // 1. 如果有 permalink (文件或带 index 的文件夹)，直接使用
+        if ('permalink' in targetMeta && targetMeta.permalink) {
+            return targetMeta.permalink;
+        }
+
+        // 2. 如果是文件夹 或 index 文件但没有 permalink，构造默认 folder 链接
+        if (('subfolders' in targetMeta) || ('type' in targetMeta && targetMeta.type === 'index')) {
+            const fPath = targetMeta.folderPath;
+            const link = fPath ? '/folder/' + fPath : '/';
+            return link.endsWith('/') ? link : `${link}/`;
+        }
     }
 
     return null;
