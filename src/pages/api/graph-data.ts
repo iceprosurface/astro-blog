@@ -7,7 +7,7 @@ function normalizePermalink(permalink: string): string {
   const trimmed = permalink.trim()
   if (trimmed === '' || trimmed === '/') return '/'
   const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`
-  return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`
 }
 
 export const GET: APIRoute = async () => {
@@ -54,7 +54,7 @@ export const GET: APIRoute = async () => {
     // 2. Create Tag Nodes
     for (const tag of tagSet) {
       nodes.push({
-        id: `/tags/${tag}`, // Use pseudo-path for ID
+        id: `/tags/${tag}/`, // Use pseudo-path for ID
         text: `#${tag}`,
         visited: false,
         nodeType: 'tag'
@@ -92,7 +92,7 @@ export const GET: APIRoute = async () => {
       // 4. Tag Links
       const tags = file.tags || []
       for (const tag of tags) {
-        const target = `/tags/${tag}`
+        const target = `/tags/${tag}/`
         if (nodeIdSet.has(target)) {
           links.push({
             source,

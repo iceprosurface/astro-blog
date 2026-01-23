@@ -12,7 +12,7 @@ function normalizePermalink(permalink: string): string {
   const trimmed = permalink.trim();
   if (trimmed === '' || trimmed === '/') return '/';
   const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-  return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash;
+  return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
 }
 
 function parseLimit(raw: string | null): number {

@@ -381,7 +381,7 @@ export class PathMapper {
 		}
 
 		const withLeadingSlash = trimmed.startsWith('/') ? trimmed : `/${trimmed}`;
-		return withLeadingSlash.endsWith('/') ? withLeadingSlash.slice(0, -1) : withLeadingSlash;
+		return withLeadingSlash.endsWith('/') ? withLeadingSlash : `${withLeadingSlash}/`;
 	}
 
 	/**
