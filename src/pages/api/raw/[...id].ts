@@ -2,6 +2,8 @@
 import { getCollection } from 'astro:content';
 import type { APIRoute } from 'astro';
 
+export const prerender = true;
+
 export const GET: APIRoute = async ({ params, request }) => {
     const id = params.id;
 

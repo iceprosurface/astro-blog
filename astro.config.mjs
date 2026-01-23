@@ -26,6 +26,7 @@ export default defineConfig({
 			!page.includes('/preview/') &&
 			!page.includes('/api/'),
 	}), react()],
+	output: 'server',
 	adapter: node({
 		mode: 'standalone',
 	}),

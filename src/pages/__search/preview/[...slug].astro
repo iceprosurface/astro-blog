@@ -1,6 +1,7 @@
 ---
+export const prerender = true;
 import { getCollection, type CollectionEntry } from "astro:content";
-import MarkdownRenderer from "../../components/MarkdownRenderer.astro";
+import MarkdownRenderer from "../../../components/MarkdownRenderer.astro";
 
 export async function getStaticPaths() {
 	const posts = await getCollection("blog", ({ data, id }) => {
