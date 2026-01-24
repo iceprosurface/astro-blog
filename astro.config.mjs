@@ -8,6 +8,7 @@ import { defineConfig } from 'astro/config';
 
 import remarkCallout from './src/plugins/remark-callout.mjs';
 import remarkMath from 'remark-math';
+import remarkCjkFriendly from 'remark-cjk-friendly';
 import rehypeKatex from 'rehype-katex';
 import remarkMathFlag from './src/plugins/remark-math-flag.mjs';
 import rehypeMarkExternalLinks from './src/plugins/rehype-mark-external-links.mjs';
@@ -43,6 +44,7 @@ export default defineConfig({
 			excludeLangs: ['mermaid', 'math'],
 		},
 		remarkPlugins: [
+			remarkCjkFriendly,
 			remarkMath,
 			remarkMathFlag,
 			remarkCallout,

@@ -9,6 +9,7 @@ import remarkFootnotes from "../plugins/remark-footnotes.mjs";
 import remarkCallout from "../plugins/remark-callout.mjs";
 import remarkMath from "remark-math";
 import remarkMathFlag from "../plugins/remark-math-flag.mjs";
+import remarkCjkFriendly from "remark-cjk-friendly";
 import rehypeResolveInternalLinks from "../plugins/rehype-resolve-internal-links.mjs";
 import rehypeMarkExternalLinks from "../plugins/rehype-mark-external-links.mjs";
 import rehypeSlug from "../plugins/rehype-slug.mjs";
@@ -134,6 +135,7 @@ const processor = unified()
   .use(remarkFootnotes) // Support footnotes [^1]
   .use(remarkMath)
   .use(remarkMathFlag)
+  .use(remarkCjkFriendly)
   .use(remarkCallout)
   .use(remarkRehype, { allowDangerousHtml: true })
   .use(rehypeResolveRelativeAssets) // 解析相对路径图片 - 需在其他 rehype 插件前执行，或尽早执行
