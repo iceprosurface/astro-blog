@@ -25,9 +25,9 @@
 	--strong-em-color-1: #ff8a00;
 	--strong-em-color-2: #e52e71;
 
-	--headerFont: "LXGW WenKai", sans-serif;
-	--bodyFont: "LXGW WenKai", sans-serif;
-	--codeFont: "LXGW WenKai Mono", monospace;
+	--headerFont: "PT Sans", ui-sans-serif, system-ui, "HarmonyOS Sans SC", "Noto Sans CJK SC", "Noto Sans SC", "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+	--bodyFont: "PT Sans", ui-sans-serif, system-ui, "HarmonyOS Sans SC", "Noto Sans CJK SC", "Noto Sans SC", "Segoe UI", sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+	--codeFont: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono", monospace;
 
 	--accent: var(--secondary);
 	--accent-dark: var(--tertiary);
