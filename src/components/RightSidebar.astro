@@ -16,7 +16,10 @@ const { headings = [], permalink } = Astro.props;
         <div>
           <p>关系图谱</p>
           <section class="graph-container">
-            <Graph client:idle currentPermalink={permalink} />
+            <Graph
+              client:media="(min-width: 1200px)"
+              currentPermalink={permalink}
+            />
           </section>
         </div>
       )
