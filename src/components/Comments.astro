@@ -8,10 +8,9 @@ const { path, show } = Astro.props;
 ---
 
 {show && <div id="tcomment" />}
-<style>
-  #tcomment {
-    margin-top: 1.2rem;
-    min-height: 200px; /* 给他一个最小高度，避免布局偏移，也方便观察 */
+<style is:global>
+  .twikoo {
+    margin-top: 2.4rem;
   }
 </style>
 
