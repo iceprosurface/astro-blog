@@ -10,7 +10,7 @@ export interface UserPreferences {
 }
 
 export const DEFAULT_PREFS: UserPreferences = {
-    repelForce: 1.2,
+    repelForce: 4,
     centerForce: 0.3,
     linkDistance: 60,
     showTags: true,
