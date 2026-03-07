@@ -1,0 +1,201 @@
+---
+import BaseLayout from "../layouts/BaseLayout.astro";
+import AIAssistance from "../components/AIAssistance.astro";
+
+if (!import.meta.env.DEV) {
+	return new Response(null, { status: 404, statusText: "Not Found" });
+}
+
+const examples = [
+	{
+		title: "轻度 AI 辅助",
+		description: "适合只让 AI 帮忙做结构梳理、个别段落润色的文章。",
+		ai: {
+			percentage: 18,
+			note: "仅在提纲整理和少量措辞优化阶段使用 AI，正文内容与最终审核主要由人工完成。",
+			tools: [
+				{
+					name: "GPT-5",
+					contribution: 5,
+					usage: "提纲整理与标题备选",
+				},
+				{
+					name: "Gemini",
+					contribution: 10,
+					usage: "局部措辞优化与配图建议",
+				},
+			],
+		},
+	},
+	{
+		title: "中度 AI 辅助",
+		description: "适合 AI 参与初稿和局部改写，但仍保留明显人工整理过程的文章。",
+		ai: {
+			percentage: 56,
+			note: "AI 负责初稿扩写与段落重组，人工负责事实核对、结构调整与最终定稿。",
+			tools: [
+				{
+					name: "Claude 4.5 Sonnet",
+					contribution: 31,
+					usage: "长段落改写与语气统一",
+				},
+				{
+					name: "GPT-5",
+					contribution: 25,
+					usage: "初稿补全与小标题设计",
+				},
+			],
+		},
+	},
+	{
+		title: "重度 AI 辅助 + 多模型",
+		description: "适合项目复盘、实验记录这类 AI 深度参与的内容。",
+		ai: {
+			percentage: 91,
+			note: "从提纲、正文初稿到配图建议都由多模型协同完成，人工主要承担筛选、修订和最终发布。",
+			tools: [
+				{
+					name: "GPT-5",
+					contribution: 38,
+					usage: "结构规划与正文初稿",
+				},
+				{
+					name: "Claude 4.5 Sonnet",
+					contribution: 28,
+					usage: "段落重写与文风统一",
+				},
+				{
+					name: "Gemini 2.5 Pro",
+					contribution: 25,
+					usage: "配图建议与说明补充",
+				},
+			],
+		},
+	},
+] as const;
+---
+
+<BaseLayout
+	title="AI 标记展示测试页"
+	description="用于预览 AI 辅助标记在文章中的展示效果。"
+	showRightSidebar={false}
+>
+	<section class="demo-page">
+		<header class="hero">
+			<p class="eyebrow">Preview</p>
+			<h1>AI 标记展示测试页</h1>
+			<p class="summary">
+				这个页面用于快速查看 AI 标记在不同占比、不同模型组合下的展示效果。
+			</p>
+		</header>
+
+		<section class="badge-strip">
+			<h2>顶部折叠态预览</h2>
+			<div class="badge-list">
+				{examples.map((item) => <AIAssistance ai={item.ai} />)}
+			</div>
+		</section>
+
+		<section class="panel-list">
+			<h2>不同内容场景</h2>
+			{examples.map((item) => (
+				<article class="demo-card">
+					<div class="demo-card-header">
+						<div>
+							<h3>{item.title}</h3>
+							<p>{item.description}</p>
+						</div>
+					</div>
+					<AIAssistance ai={item.ai} />
+				</article>
+			))}
+		</section>
+	</section>
+
+	<style>
+		.demo-page {
+			max-width: 960px;
+			margin: 0 auto;
+			padding: 1rem 0 3rem;
+		}
+
+		.hero {
+			margin-bottom: 2rem;
+		}
+
+		.eyebrow {
+			margin: 0 0 0.4rem;
+			font-size: 0.85rem;
+			font-weight: 700;
+			letter-spacing: 0.08em;
+			text-transform: uppercase;
+			color: var(--secondary);
+		}
+
+		.hero h1 {
+			margin: 0;
+			font-size: clamp(2rem, 4vw, 3rem);
+			line-height: 1.15;
+		}
+
+		.summary {
+			margin: 0.8rem 0 0;
+			max-width: 46rem;
+			font-size: 1rem;
+			line-height: 1.7;
+			color: var(--gray);
+		}
+
+		.badge-strip,
+		.panel-list {
+			margin-top: 2rem;
+		}
+
+		.badge-strip h2,
+		.panel-list h2 {
+			margin-bottom: 0.9rem;
+		}
+
+		.badge-list {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 0.75rem;
+			padding: 1rem;
+			border-radius: 16px;
+			background: color-mix(in srgb, var(--light) 94%, white);
+			border: 1px solid var(--lightgray);
+		}
+
+		.demo-card {
+			padding: 1.25rem;
+			margin-top: 1rem;
+			border-radius: 18px;
+			border: 1px solid var(--lightgray);
+			background: color-mix(in srgb, var(--light) 96%, white);
+		}
+
+		.demo-card-header {
+			display: flex;
+			justify-content: space-between;
+			gap: 1rem;
+			align-items: flex-start;
+		}
+
+		.demo-card h3 {
+			margin: 0;
+			font-size: 1.2rem;
+		}
+
+		.demo-card p {
+			margin: 0.45rem 0 0;
+			color: var(--gray);
+			line-height: 1.6;
+		}
+
+		@media (max-width: 720px) {
+			.demo-card-header {
+				flex-direction: column;
+			}
+		}
+	</style>
+</BaseLayout>

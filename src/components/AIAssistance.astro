@@ -1,0 +1,350 @@
+---
+import type { CollectionEntry } from "astro:content";
+import { Brain, Check, ChevronDown, X } from "@lucide/astro";
+
+interface Props {
+	ai: NonNullable<CollectionEntry<"blog">["data"]["ai"]>;
+}
+
+const { ai } = Astro.props;
+const formatPercentage = (value: number) => {
+	const fixed = Number.isInteger(value) ? value.toString() : value.toFixed(1);
+	return `${fixed}%`;
+};
+
+const level = "light";
+
+const hasReviewedStatus = typeof ai.reviewed === "boolean";
+
+const statusChips = [
+	ai.collected ? "AI 收集整理" : null,
+].filter(Boolean);
+
+const cautionText = ai.reviewed === false
+	? "本文已明确标记为未人工审核，不建议直接采集、复制或作为可引用来源。"
+	: null;
+---
+
+<details class={`ai-disclosure ai-disclosure-${level}`}>
+	<summary class="ai-summary">
+		<span class="ai-summary-label">
+			<Brain size={13} />
+			AI
+		</span>
+		<span class="ai-summary-tools">
+			{statusChips.map((status) => (
+				<span class="ai-summary-chip ai-summary-chip-status ai-summary-chip-warning">{status}</span>
+			))}
+			{hasReviewedStatus && (
+				<span class={`ai-summary-chip ai-summary-chip-review ${ai.reviewed ? "is-yes" : "is-no"}`}>
+					人工审核
+					{ai.reviewed ? <Check size={12} /> : <X size={12} />}
+				</span>
+			)}
+			{ai.tools.map((tool) => (
+				<span class="ai-summary-chip">{tool.name}</span>
+			))}
+		</span>
+		<span class="ai-summary-toggle">
+			<ChevronDown size={13} />
+		</span>
+	</summary>
+
+	<div class="ai-content">
+		<div class="ai-content-header">
+			<strong>AI 参与说明</strong>
+		</div>
+		{cautionText && <p class="ai-caution is-unreviewed">{cautionText}</p>}
+		{ai.note && <p class="ai-note">{ai.note}</p>}
+		<ul class="ai-tool-list">
+			<li class="ai-tool-item ai-tool-item-status">
+				<span class="ai-tool-name">整理方式</span>
+				<span class="ai-tool-usage">
+					{ai.collected ? "整篇内容由 AI 收集整理" : "AI 参与写作或编辑，但不代表整篇均为 AI 收集整理"}
+				</span>
+			</li>
+			{hasReviewedStatus && (
+				<li class="ai-tool-item ai-tool-item-status">
+					<span class="ai-tool-name">人工审核</span>
+					<span class={`ai-review-badge ${ai.reviewed ? "is-yes" : "is-no"}`}>
+						{ai.reviewed ? <Check size={12} /> : <X size={12} />}
+						{ai.reviewed ? "已复核" : "未复核"}
+					</span>
+				</li>
+			)}
+			{ai.tools.map((tool) => (
+				<li class="ai-tool-item">
+					<span class="ai-tool-name">{tool.name}</span>
+					{tool.contribution != null && (
+						<span class="ai-tool-contribution">约 {formatPercentage(tool.contribution)}</span>
+					)}
+					{tool.usage && <span class="ai-tool-usage">{tool.usage}</span>}
+				</li>
+			))}
+		</ul>
+	</div>
+</details>
+
+<style>
+	.ai-disclosure {
+		margin-top: 0.65rem;
+		border: 1px solid color-mix(in srgb, var(--lightgray) 72%, transparent);
+		border-radius: 12px;
+		background: color-mix(in srgb, var(--light) 98%, white);
+		overflow: hidden;
+		box-shadow: none;
+	}
+
+	.ai-disclosure[open] {
+		border-radius: 12px;
+	}
+
+	.ai-disclosure-light {
+		border-color: color-mix(in srgb, var(--gray) 10%, var(--lightgray));
+	}
+
+	.ai-disclosure-medium {
+		border-color: color-mix(in srgb, #f59e0b 12%, var(--lightgray));
+	}
+
+	.ai-disclosure-high {
+		border-color: color-mix(in srgb, #8b5cf6 12%, var(--lightgray));
+	}
+
+	.ai-summary {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.65rem;
+		padding: 0.42rem 0.5rem;
+		min-height: 2.45rem;
+		cursor: pointer;
+		list-style: none;
+	}
+
+	.ai-summary::-webkit-details-marker {
+		display: none;
+	}
+
+	.ai-summary-label {
+		display: inline-flex;
+		align-items: center;
+		min-height: 1.6rem;
+		gap: 0.3rem;
+		font-size: 0.72rem;
+		font-weight: 700;
+		color: color-mix(in srgb, var(--gray) 96%, var(--darkgray));
+		flex-shrink: 0;
+		padding: 0.14rem 0.34rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, var(--light) 97%, white);
+	}
+
+
+	.ai-summary-tools {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		flex: 1;
+		min-width: 0;
+	}
+
+	.ai-summary-chip {
+		display: inline-flex;
+		align-items: center;
+		min-height: 1.6rem;
+		padding: 0.14rem 0.46rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, white 92%, var(--light));
+		border: 1px solid color-mix(in srgb, var(--lightgray) 52%, transparent);
+		font-size: 0.76rem;
+		font-weight: 600;
+		line-height: 1.2;
+		white-space: nowrap;
+		color: color-mix(in srgb, var(--darkgray) 82%, var(--gray));
+	}
+
+	.ai-summary-chip-status {
+		background: color-mix(in srgb, white 95%, var(--light));
+		font-weight: 500;
+	}
+
+	.ai-summary-chip-warning {
+		background: color-mix(in srgb, #f59e0b 14%, white);
+		border-color: color-mix(in srgb, #f59e0b 24%, var(--lightgray));
+		color: color-mix(in srgb, #b45309 78%, var(--darkgray));
+	}
+
+	.ai-summary-chip-review {
+		gap: 0.25rem;
+		font-weight: 500;
+	}
+
+	.ai-summary-chip-review.is-yes {
+		color: color-mix(in srgb, #15803d 72%, var(--darkgray));
+	}
+
+	.ai-summary-chip-review.is-no {
+		color: color-mix(in srgb, #b45309 72%, var(--darkgray));
+	}
+
+	.ai-summary-toggle {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		align-self: center;
+		width: 1.6rem;
+		height: 1.6rem;
+		border-radius: 999px;
+		background: color-mix(in srgb, white 86%, var(--light));
+		color: color-mix(in srgb, var(--gray) 94%, var(--darkgray));
+		flex-shrink: 0;
+	}
+
+	.ai-disclosure[open] .ai-summary-toggle svg {
+		transform: rotate(180deg);
+	}
+
+	.ai-summary-toggle svg {
+		transition: transform 0.2s ease;
+	}
+
+	.ai-content {
+		padding: 0 0.7rem 0.7rem;
+		background: color-mix(in srgb, white 92%, var(--light));
+		border-bottom-left-radius: 14px;
+		border-bottom-right-radius: 14px;
+	}
+
+	.ai-content-header {
+		margin-top: 0.65rem;
+		font-size: 0.82rem;
+		font-weight: 500;
+		letter-spacing: 0.01em;
+		color: color-mix(in srgb, var(--darkgray) 74%, var(--gray));
+	}
+
+	.ai-caution {
+		margin: 0.45rem 0 0;
+		font-size: 0.8rem;
+		line-height: 1.55;
+	}
+
+	.ai-caution.is-unreviewed {
+		color: color-mix(in srgb, #b45309 58%, var(--gray));
+	}
+
+	.ai-note {
+		margin: 0.5rem 0 0;
+		font-size: 0.88rem;
+		line-height: 1.6;
+		color: var(--darkgray);
+	}
+
+	.ai-tool-list {
+		margin: 0.6rem 0 0;
+		padding: 0;
+		list-style: none;
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+	}
+
+	.ai-tool-item {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.45rem;
+		font-size: 0.84rem;
+		line-height: 1.5;
+	}
+
+	.ai-tool-item-status {
+		padding-bottom: 0.1rem;
+	}
+
+	.ai-review-badge {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.28rem;
+		padding: 0.08rem 0.42rem;
+		border-radius: 999px;
+		font-size: 0.78rem;
+		font-weight: 600;
+	}
+
+	.ai-review-badge.is-yes {
+		background: color-mix(in srgb, #16a34a 8%, white);
+		color: #15803d;
+	}
+
+	.ai-review-badge.is-no {
+		background: color-mix(in srgb, #f59e0b 10%, white);
+		color: #b45309;
+	}
+
+	.ai-tool-name {
+		font-weight: 600;
+		color: color-mix(in srgb, var(--dark) 86%, var(--gray));
+	}
+
+	.ai-tool-contribution,
+	.ai-tool-usage {
+		color: color-mix(in srgb, var(--gray) 94%, var(--darkgray));
+	}
+
+	@media (max-width: 720px) {
+		.ai-summary {
+			flex-wrap: wrap;
+			align-items: flex-start;
+			gap: 0.45rem;
+		}
+
+		.ai-summary-label {
+			order: 1;
+		}
+
+		.ai-summary-toggle {
+			order: 2;
+			margin-left: auto;
+			align-self: center;
+		}
+
+		.ai-summary-tools {
+			order: 3;
+			width: 100%;
+			padding-left: 0;
+			gap: 0.35rem;
+			align-items: flex-start;
+		}
+
+		.ai-summary-chip,
+		.ai-summary-chip-status,
+		.ai-summary-chip-review {
+			font-size: 0.74rem;
+			line-height: 1.15;
+		}
+
+		.ai-content {
+			padding: 0 0.65rem 0.65rem;
+		}
+
+		.ai-disclosure {
+			border-radius: 12px;
+		}
+
+		.ai-disclosure:not([open]) {
+			border-radius: 12px;
+		}
+
+		.ai-tool-item {
+			gap: 0.35rem;
+			font-size: 0.82rem;
+		}
+
+		.ai-note,
+		.ai-caution {
+			font-size: 0.84rem;
+			line-height: 1.55;
+		}
+	}
+</style>

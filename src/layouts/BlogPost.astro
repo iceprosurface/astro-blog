@@ -8,6 +8,7 @@ import Breadcrumb from "../components/Breadcrumb.astro";
 import LinkCard from "../components/LinkCard.astro";
 import License from "../components/License.astro";
 import ReprintNote from "../components/ReprintNote.astro";
+import AIAssistance from "../components/AIAssistance.astro";
 import { Github, Copy, Check } from "@lucide/astro";
 
 import { GITHUB_BRANCH, GITHUB_REPO, PROJECT_ROOT } from "../consts";
@@ -51,6 +52,7 @@ const {
 	"origin-license": originLicense,
 	"origin-note": originNote,
 	tags,
+	ai,
 	folderChildren, // From contentSchema
 } = Astro.props;
 
@@ -268,6 +270,13 @@ if (folderChildren) {
 						}
 					</div>
 				</div>
+				{
+					ai && (
+						<div class="meta-ai">
+							<AIAssistance ai={ai} />
+						</div>
+					)
+				}
 			</div>
 			{
 				tags && tags.length > 0 && (
@@ -347,11 +356,17 @@ if (folderChildren) {
 		.content-meta {
 			margin: 0;
 			display: flex;
+			align-items: center;
+			flex-wrap: wrap;
+			gap: 0.4rem;
 		}
 		.meta-actions {
 			display: flex;
 			gap: 0.5rem;
 			align-items: center;
+		}
+		.meta-ai {
+			margin-top: 0.55rem;
 		}
 
 		@media (max-width: 768px) {
@@ -362,6 +377,9 @@ if (folderChildren) {
 			}
 			.meta-actions {
 				align-self: flex-end;
+			}
+			.meta-ai {
+				width: 100%;
 			}
 		}
 		.action-btn {
