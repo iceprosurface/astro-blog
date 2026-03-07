@@ -28,6 +28,35 @@
 - **提示词规模**: 累计消耗约 **80,000+** 字的 Prompts（含 AI 生成和人工创建）。
 - **人工干预**: 仅约 **4%** 的核心代码（主要是路径映射边界情况）由人工进行“手术刀式”修正。
 
+### 🏷️ 文章 AI 标记 Front Matter
+
+文章支持通过 front matter 标记 AI 辅助信息，用于页面展示 AI 编辑占比与所使用的模型：
+
+- `percentage` 表示 AI 参与编辑的人工估算总占比，不代表事实可信度或内容质量评分。
+- `percentage` 需要由作者单独填写；多个 AI 对同一段落的修改可能重叠，不要用 `tools[].contribution` 简单相加推导。
+- `collected` 表示整篇内容是否主要由 AI 收集整理。
+- `reviewed` 表示 AI 产出内容是否经过人工复核。
+- `contribution` 表示单个 AI 对整篇内容的大致贡献占比，属于可选的经验值字段。
+
+- `reviewed: true`：表示文章经过人工审核。
+- `collected: true`：表示整篇内容由 AI 收集整理。
+- 若 `reviewed` 未填写或为 `false`，默认按“纯 AI 整理内容”处理，不建议采集、复制或引用。
+
+```yaml
+ai:
+  percentage: 85
+  collected: true
+  reviewed: true
+  note: 初稿与润色由 AI 协助完成，最终校对由人工负责。
+  tools:
+    - name: GPT-5
+      contribution: 40
+      usage: 结构规划与正文初稿
+    - name: Gemini 2.5 Pro
+      contribution: 45
+      usage: 润色与配图
+```
+
 ---
 
 ## 🏆 核心开发团队 / Credits

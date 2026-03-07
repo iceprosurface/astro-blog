@@ -1,6 +1,20 @@
 import { defineCollection, z } from 'astro:content';
 import { glob } from 'astro/loaders';
 
+const aiToolSchema = z.object({
+	name: z.string(),
+	contribution: z.number().min(0).max(100).optional().nullable(),
+	usage: z.string().optional().nullable(),
+});
+
+const aiSchema = z.object({
+	percentage: z.number().min(0).max(100).optional().nullable(),
+	collected: z.boolean().optional().default(false),
+	reviewed: z.boolean().optional().nullable(),
+	note: z.string().optional().nullable(),
+	tools: z.array(aiToolSchema).min(1),
+});
+
 const blog = defineCollection({
 	// Load Markdown and MDX files in the `src/content/blog/` directory.
 	loader: glob({ base: './src/content/blog', pattern: '**/*.{md,mdx}' }),
@@ -9,6 +23,7 @@ const blog = defineCollection({
 		z.object({
 			title: z.string().optional().nullable(),
 			description: z.string().optional().nullable(),
+			ai: aiSchema.optional().nullable(),
 			// Transform string to Date object
 			date: z.coerce.date().optional().nullable(),
 			updated: z.coerce.date().optional().nullable(),
