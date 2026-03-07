@@ -5,6 +5,18 @@ updated: 2026-02-12T11:51:00+08:00
 permalink: /card-library/insight/ai-fatigue-and-decision-cost/
 tags:
   - AI
+ai:
+  percentage: 40
+  collected: false
+  reviewed: true
+  note: 整体思想与核心判断由人工总结，AI 主要负责语言润色与段落结构整理。
+  tools:
+    - name: Gemini 3
+      contribution: 40
+      usage: 语言润色与文字表达优化
+    - name: GPT-5.3 Codex
+      contribution: 21
+      usage: 段落结构整理与逻辑编排
 ccby: false
 draft: false
 comments: true

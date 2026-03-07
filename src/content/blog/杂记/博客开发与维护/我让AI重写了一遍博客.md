@@ -6,6 +6,21 @@ permalink: /blog/ai-rewrite-blog/
 tags:
   - 博客开发
   - AI
+ai:
+  percentage: 92
+  collected: false
+  reviewed: true
+  note: 初稿、结构整理、措辞润色与配图均由 AI 辅助完成，最终事实核对与发布由人工负责。
+  tools:
+    - name: GPT-5
+      contribution: 45
+      usage: 架构梳理与正文初稿
+    - name: Claude 4.5 Sonnet
+      contribution: 27
+      usage: 段落重写与语气校准
+    - name: Gemini 2.5 Pro
+      contribution: 20
+      usage: 配图生成与细节润色
 ccby: true
 comments: true
 no-rss: false
