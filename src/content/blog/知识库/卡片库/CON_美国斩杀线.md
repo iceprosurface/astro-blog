@@ -1,12 +1,21 @@
 ---
 title: 美国斩杀线
 date: 2026-01-22T00:00:00+08:00
-updated: 2026-01-22T00:00:00+08:00
+updated: 2026-03-07T13:14:07+08:00
 permalink: /card-library/concept/us-killing-line/
 tags:
   - 社会现象
   - 资本主义
   - 阶级分化
+ai:
+  collected: true
+  reviewed: true
+  note: DeepSeek v3.2 提供论据，Gemini 3.0 Flash 负责内容整理，最终由人工复核。
+  tools:
+    - name: DeepSeek v3.2
+      usage: 提供论据和数据收集
+    - name: Gemini 3.0 Flash
+      usage: 内容整理
 ccby: false
 draft: false
 comments: true

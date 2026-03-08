@@ -1,13 +1,20 @@
 ---
 title: 私有数据与垂类领域的 Agent 长效壁垒
 date: 2026-01-23T15:30:00+08:00
-updated: 2026-01-23T15:30:00+08:00
+updated: 2026-03-07T13:16:58+08:00
 permalink: /card-library/insight/private-data-vertical-moat/
 tags:
   - AI
   - 数据壁垒
   - Agent
   - 垂类领域
+ai:
+  collected: false
+  reviewed: true
+  note: 内容由人工撰写，gpt-5.2 负责整理链接格式，最终由人工复核。
+  tools:
+    - name: gpt-5.2
+      usage: 整理链接格式
 ccby: false
 draft: false
 comments: true

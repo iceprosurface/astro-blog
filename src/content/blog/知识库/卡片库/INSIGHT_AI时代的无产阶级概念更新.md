@@ -1,11 +1,18 @@
 ---
 title: AI时代的无产阶级概念更新
 date: 2026-01-22T00:00:00+08:00
-updated: 2026-01-22T00:00:00+08:00
+updated: 2026-03-07T13:29:00+08:00
 permalink: /card-library/insight/proletariat-in-ai-era/
 tags:
   - AI
   - 社会学
+ai:
+  collected: false
+  reviewed: true
+  note: 内容由人工撰写，Gemini 3.0 Pro 负责润色，最终由人工复核。
+  tools:
+    - name: Gemini 3.0 Pro
+      usage: 润色
 ccby: false
 draft: false
 comments: true

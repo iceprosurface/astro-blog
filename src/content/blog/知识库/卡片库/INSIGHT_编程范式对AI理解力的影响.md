@@ -1,13 +1,20 @@
 ---
 title: 编程范式对 AI 理解力的影响：为何 FP 优于 OOP
 date: 2026-01-22T00:00:00+08:00
-updated: 2026-01-22T00:00:00+08:00
+updated: 2026-03-07T13:16:58+08:00
 permalink: /card-box/insight/programming-paradigms-effect-on-ai/
 tags:
   - AI
   - 编程范式
   - 函数式编程
   - 软件工程
+ai:
+  collected: false
+  reviewed: true
+  note: 观点由人工提出，Gemini 3.0 Pro 负责润色，最终由人工复核。
+  tools:
+    - name: Gemini 3.0 Pro
+      usage: 润色
 ccby: false
 draft: false
 comments: true

@@ -1,11 +1,18 @@
 ---
 title: 卢曼式编号的过时性：AI 时代的索引变革
 date: 2026-01-22T00:00:00+08:00
-updated: 2026-01-22T00:00:00+08:00
+updated: 2026-03-07T13:16:58+08:00
 permalink: /card-box/insight/obsolescence-of-luhmann-numbering/
 tags:
   - 知识管理
   - AI
+ai:
+  collected: false
+  reviewed: true
+  note: 内容由人工撰写，Gemini 负责润色，最终由人工复核。
+  tools:
+    - name: Gemini 3.0 Pro
+      usage: 润色
 ccby: false
 draft: false
 comments: true

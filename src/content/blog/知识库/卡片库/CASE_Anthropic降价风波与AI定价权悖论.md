@@ -1,13 +1,20 @@
 ---
 title: Anthropic 降价风波与 AI 企业的定价权悖论
 date: 2026-01-23T14:59:00+08:00
-updated: 2026-01-23T14:59:00+08:00
+updated: 2026-03-07T13:08:13+08:00
 permalink: /card-library/case/anthropic-pricing-paradox/
 tags:
   - 商业案例
   - AI 行业
   - 开源
   - 定价权
+ai:
+  collected: true
+  reviewed: true
+  note: 内容由 AI 协助采集整理，最终由人工复核。
+  tools:
+    - name: Gemini 3.0 Flash
+      usage: 资料采集与内容整理
 ccby: false
 draft: false
 comments: true

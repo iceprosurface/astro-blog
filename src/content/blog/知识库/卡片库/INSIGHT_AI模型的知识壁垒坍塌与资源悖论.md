@@ -1,13 +1,20 @@
 ---
 title: AI 模型的知识壁垒坍塌与资源悖论
 date: 2026-01-23T15:15:00+08:00
-updated: 2026-01-23T15:15:00+08:00
+updated: 2026-03-07T13:28:00+08:00
 permalink: /card-library/insight/ai-model-barrier-collapse/
 tags:
   - AI
   - 护城河
   - 知识蒸馏
   - 资源悖论
+ai:
+  collected: false
+  reviewed: true
+  note: 内容由人工撰写，Gemini 3.0 Flash 负责整理格式，最终由人工复核。
+  tools:
+    - name: Gemini 3.0 Flash
+      usage: 整理格式
 ccby: false
 draft: false
 comments: true

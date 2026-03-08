@@ -1,12 +1,19 @@
 ---
 title: 制度底色：风险“个体化”与“社会化”的资本逻辑
 date: 2026-01-22T11:55:00+08:00
-updated: 2026-01-22T11:55:00+08:00
+updated: 2026-03-07T13:28:00+08:00
 permalink: /card-box/insight/capital-logic-in-risk-distribution/
 tags:
   - 制度比较
   - 资本逻辑
   - 社会保障
+ai:
+  collected: false
+  reviewed: true
+  note: 核心结论由作者与 DeepSeek v3.2 反复交流后形成，最终由人工复核整理。
+  tools:
+    - name: DeepSeek v3.2
+      usage: 观点讨论与结论推演
 ccby: false
 draft: false
 comments: true
@@ -40,4 +47,3 @@ no-rss: true
 **补充视角**：
 
 从宏观群体或国家竞争的角度来看，不同制度在不同发展阶段可能各具优劣，未必存在绝对的终极答案。但**回归到每一个具体的个体生命**，正如“时代的灰尘落到每一个人脑袋上，都是一座无法逾越的大山”：在系统性风险面前，拥有社会化托底的后者，无疑为平凡人提供了更高维度的生存确定性与基本尊严。
-

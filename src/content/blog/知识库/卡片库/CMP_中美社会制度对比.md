@@ -1,12 +1,21 @@
 ---
 title: 中美社会制度对比
 date: 2026-01-22T00:00:00+08:00
-updated: 2026-01-22T00:00:00+08:00
+updated: 2026-03-07T13:14:07+08:00
 permalink: /card-library/comparison/us-china-social-systems/
 tags:
   - 制度比较
   - 社会保障
   - 治理模式
+ai:
+  collected: true
+  reviewed: true
+  note: DeepSeek v3.2 提供论据，Gemini 3.0 Flash 负责内容整理，最终由人工复核。
+  tools:
+    - name: DeepSeek v3.2
+      usage: 提供论据
+    - name: Gemini 3.0 Flash
+      usage: 内容整理
 ccby: false
 draft: false
 comments: true

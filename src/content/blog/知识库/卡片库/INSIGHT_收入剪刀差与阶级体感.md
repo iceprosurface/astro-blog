@@ -1,11 +1,18 @@
 ---
 title: 收入剪刀差与阶级体感
 date: 2026-01-22T00:00:00+08:00
-updated: 2026-01-22T00:00:00+08:00
+updated: 2026-03-07T13:16:58+08:00
 permalink: /card-box/insight/income-scissors-difference/
 tags:
   - 经济学
   - 消费观
+ai:
+  collected: false
+  reviewed: true
+  note: 内容由人工撰写，Qwen 7B 负责整理格式，最终由人工复核。
+  tools:
+    - name: Qwen 7B
+      usage: 整理格式
 ccby: false
 draft: false
 comments: true

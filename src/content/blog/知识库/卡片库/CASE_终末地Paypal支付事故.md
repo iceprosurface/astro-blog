@@ -1,12 +1,19 @@
 ---
 title: 终末地 Paypal 支付事故
 date: 2026-01-23T17:58:42+08:00
-updated: 2026-01-23T17:58:42+08:00
+updated: 2026-03-07T13:08:13+08:00
 tags:
   - 终末地
   - 运营事故
   - 支付安全
   - 商业案例
+ai:
+  collected: true
+  reviewed: true
+  note: 内容由 AI 协助采集整理，最终由人工复核。
+  tools:
+    - name: Gemini 3.0 Pro
+      usage: 资料采集与内容整理
 ccby: false
 draft: false
 comments: true
