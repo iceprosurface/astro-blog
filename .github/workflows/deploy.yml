@@ -11,7 +11,7 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: read
 
@@ -35,13 +35,13 @@ jobs:
 
             cd /opt/services/iceprosurface.com
 
-            # 拉取最新镜像并重启
-            docker compose pull
-            docker compose up -d
+            # 只更新博客，避免影响同机的 Caddy、Twikoo 和 Vaultwarden
+            docker compose pull astro-blog
+            docker compose up -d --no-deps astro-blog
 
             # 清理旧镜像
             docker image prune -f
 
             # 显示日志
-            docker compose logs --tail=20
+            docker compose logs --tail=20 astro-blog
           ENDSSH
