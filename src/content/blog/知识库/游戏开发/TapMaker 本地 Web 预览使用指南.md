@@ -15,7 +15,7 @@ ai:
     - name: GPT-5.6-sol
       usage: 源码梳理、文章写作与 Skill 创建
 ccby: true
-draft: false
+draft: true
 comments: true
 no-rss: false
 ---
