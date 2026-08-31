@@ -1,7 +1,7 @@
 ---
 title: TapMaker 本地 Web 预览：不上传资源的快速调试工作流
 date: 2026-08-31T15:44:00+08:00
-updated: 2026-08-31T16:05:00+08:00
+updated: 2026-08-31T16:10:00+08:00
 permalink: /2026/tapmaker-local-web-preview/
 tags:
   - TapMaker
@@ -11,6 +11,9 @@ ai:
   collected: false
   reviewed: false
   note: 本文由 GPT-5.6-sol 根据 tapmaker_workspace 源码与仓库操作规范整理，尚未经人工复核。
+  tools:
+    - name: GPT-5.6-sol
+      usage: 源码梳理、文章写作与 Skill 创建
 ccby: true
 draft: false
 comments: true
