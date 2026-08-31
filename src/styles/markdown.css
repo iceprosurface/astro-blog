@@ -234,9 +234,9 @@ pre>code,
     display: block;
 }
 
-/* Shiki specific overrides if needed */
-html.dark .astro-code,
-html.dark .astro-code span {
+/* Shiki emits `.shiki`; keep `.astro-code` for older rendered content. */
+html.dark :is(.shiki, .astro-code),
+html.dark :is(.shiki, .astro-code) span {
     color: var(--shiki-dark) !important;
     background-color: var(--shiki-dark-bg) !important;
 }
